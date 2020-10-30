@@ -1,5 +1,6 @@
 defmodule PolyglotWatcher.Server do
   use GenServer
+  alias PolyglotWatcher.Inotifywait
 
   @process_name :server
 
@@ -13,14 +14,16 @@ defmodule PolyglotWatcher.Server do
   end
 
   def get_state(pid \\ @process_name)
+
   def get_state(name) when is_atom(name) do
-    if Process.whereis(atom) do
+    case Process.whereis(name) do
       nil -> :process_not_found
       pid -> get_state(pid)
+    end
   end
 
   def get_state(pid) when is_pid(pid) do
-    :get_state(pid)
+    :sys.get_state(pid)
   end
 
   def start_link(genserver_options \\ @default_options) do
@@ -29,6 +32,15 @@ defmodule PolyglotWatcher.Server do
 
   @impl true
   def init(_) do
-    {:ok, %{}}
+    port = Port.open({:spawn, "inotifywait . -rmqe close_write"}, [:binary])
+    Port.connect(port, self())
+
+    {:ok, %{port: port}}
+  end
+
+  @impl true
+  def handle_info({port, {:data, inotifywait_output}}, state) do
+    Inotifywait.run_watcher_actions(inotifywait_output)
+    {:noreply, state}
   end
 end
