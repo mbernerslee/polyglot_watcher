@@ -32,6 +32,8 @@ defmodule PolyglotWatcher.Server do
 
   @impl true
   def init(_) do
+    ExUnit.start()
+
     port = Port.open({:spawn, "inotifywait . -rmqe close_write"}, [:binary])
     Port.connect(port, self())
 

@@ -20,11 +20,14 @@ defmodule PolyglotWatcher.Inotifywait do
     # System.cmd("mix", ["test", "--color"], into: IO.stream(:stdio, :line))
 
     command =
-      "MIX_ENV=test mix do run -e 'Application.put_env(:elixir, :ansi_enabled, true);', test"
+      "MIX_ENV=test /usr/bin/mix do run -e 'Application.put_env(:elixir, :ansi_enabled, true);', test"
 
     Path.join(:code.priv_dir(:polyglot_watcher), "zombie_killer")
     |> IO.inspect()
     |> System.cmd(["sh", "-c", command], into: IO.stream(:stdio, :line))
+
+    # paths = Path.wildcard("test/**/*_test.exs")
+    # Mix.Compilers.Test.require_and_run(paths, ["test"], formatters: [ExUnit.CLIFormatter])
 
     # System.cmd(System.find_executable("mix"), args, into: IO.stream(:stdio, :line))
   end
