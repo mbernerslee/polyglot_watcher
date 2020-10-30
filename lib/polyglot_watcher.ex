@@ -14,5 +14,6 @@ defmodule PolyglotWatcher do
   """
   def hello do
     :world
+    |> IO.inspect()
   end
 end
