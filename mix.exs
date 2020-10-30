@@ -20,6 +20,7 @@ defmodule PolyglotWatcher.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
+      mod: {PolyglotWatcher, []},
       extra_applications: [:logger]
     ]
   end

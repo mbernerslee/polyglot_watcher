@@ -1,19 +1,8 @@
 defmodule PolyglotWatcher do
-  @moduledoc """
-  Documentation for `PolyglotWatcher`.
-  """
+  use Application
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> PolyglotWatcher.hello()
-      :world
-
-  """
-  def hello do
-    :world
-    |> IO.inspect()
+  def start(_type, _args) do
+    children = []
+    Supervisor.start_link(children, strategy: :one_for_one)
   end
 end
