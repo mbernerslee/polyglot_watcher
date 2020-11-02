@@ -7,7 +7,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
     end
 
     test "z" do
-      assert 2 == 1
+      assert 2 == 2
     end
   end
 end

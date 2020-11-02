@@ -12,23 +12,27 @@ defmodule PolyglotWatcher.Inotifywait do
     |> determine_language_module_actions(server_state)
   end
 
-  defp determine_language_module_actions(file_path, server_state) do
+  defp determine_language_module_actions(:error, server_state), do: {[], server_state}
+
+  defp determine_language_module_actions({:ok, file_path}, server_state) do
     case Map.get(@extensions, file_path.extension) do
-      nil -> {%{}, server_state}
+      nil -> {[], server_state}
       module -> module.determine_actions(file_path, server_state)
     end
   end
 
   defp parse_inotifywait_output(output) do
-    [dir, _event, file_name | _] = String.split(output)
+    case String.split(output) do
+      [dir, _event, file_name | _] ->
+        file_path =
+          [dir, file_name]
+          |> Path.join()
+          |> Path.relative_to(".")
 
-    file_path =
-      [dir, file_name]
-      |> Path.join()
-      |> Path.relative_to(".")
+        {:ok, %{file_path: file_path, extension: Path.extname(file_path)}}
 
-    extension = Path.extname(file_path)
-
-    %{file_path: file_path, extension: extension}
+      _ ->
+        :error
+    end
   end
 end
