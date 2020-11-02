@@ -1,6 +1,6 @@
 defmodule PolyglotWatcher.Server do
   use GenServer
-  alias PolyglotWatcher.Inotifywait
+  alias PolyglotWatcher.{UserInput, Inotifywait}
 
   @process_name :server
 
@@ -32,17 +32,40 @@ defmodule PolyglotWatcher.Server do
 
   @impl true
   def init(_) do
-    ExUnit.start()
+    port = Port.open({:spawn, run_inotifywait_command()}, [:binary])
 
-    port = Port.open({:spawn, "inotifywait . -rmqe close_write"}, [:binary])
     Port.connect(port, self())
+    listen_for_user_input()
 
     {:ok, %{port: port}}
   end
 
+  defp run_inotifywait_command do
+    "#{Path.join(:code.priv_dir(:polyglot_watcher), "zombie_killer")} inotifywait . -rmqe close_write"
+  end
+
   @impl true
-  def handle_info({port, {:data, inotifywait_output}}, state) do
-    Inotifywait.run_watcher_actions(inotifywait_output)
+  def handle_info({_port, {:data, inotifywait_output}}, state) do
+    inotifywait_output
+    |> Inotifywait.determine_actions()
+    |> Executor.run_actions()
+
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_call({:user_input, user_input}, _from, state) do
+    state = UserInput.determine_actions(state, user_input)
+    listen_for_user_input()
+    {:noreply, state}
+  end
+
+  defp listen_for_user_input do
+    pif = self()
+
+    spawn_link(fn ->
+      user_input = IO.gets("")
+      GenServer.call(pid, {:user_input, user_input}, :infinity)
+    end)
   end
 end
