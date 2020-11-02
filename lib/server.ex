@@ -1,6 +1,6 @@
 defmodule PolyglotWatcher.Server do
   use GenServer
-  alias PolyglotWatcher.{UserInput, Inotifywait}
+  alias PolyglotWatcher.{Executor, UserInput, Inotifywait}
 
   @process_name :server
 
@@ -37,7 +37,7 @@ defmodule PolyglotWatcher.Server do
     Port.connect(port, self())
     listen_for_user_input()
 
-    {:ok, %{port: port}}
+    {:ok, %{port: port, elixir: %{mode: :default, failures: []}}}
   end
 
   defp run_inotifywait_command do
@@ -46,22 +46,27 @@ defmodule PolyglotWatcher.Server do
 
   @impl true
   def handle_info({_port, {:data, inotifywait_output}}, state) do
-    inotifywait_output
-    |> Inotifywait.determine_actions()
-    |> Executor.run_actions()
+    state =
+      inotifywait_output
+      |> Inotifywait.determine_actions(state)
+      |> Executor.run_actions()
 
     {:noreply, state}
   end
 
   @impl true
   def handle_call({:user_input, user_input}, _from, state) do
-    state = UserInput.determine_actions(state, user_input)
+    state =
+      user_input
+      |> UserInput.determine_actions(state)
+      |> Executor.run_actions()
+
     listen_for_user_input()
     {:noreply, state}
   end
 
   defp listen_for_user_input do
-    pif = self()
+    pid = self()
 
     spawn_link(fn ->
       user_input = IO.gets("")

@@ -6,17 +6,16 @@ defmodule PolyglotWatcher.Inotifywait do
     Languages.Elixir.exs() => Languages.Elixir
   }
 
-  def determine_actions(output) do
+  def determine_actions(output, server_state) do
     output
     |> parse_inotifywait_output()
-    |> determine_language_module_actions()
+    |> determine_language_module_actions(server_state)
   end
 
-
-  defp determine_language_module_actions(file_path) do
+  defp determine_language_module_actions(file_path, server_state) do
     case Map.get(@extensions, file_path.extension) do
-      nil -> %{}
-      module -> module.determine_actions(file_path)
+      nil -> {%{}, server_state}
+      module -> module.determine_actions(file_path, server_state)
     end
   end
 
