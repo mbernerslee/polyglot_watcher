@@ -21,7 +21,7 @@ defmodule PolyglotWatcher.MixProject do
   def application do
     [
       mod: {PolyglotWatcher, []},
-      extra_applications: [:logger, :ex_unit]
+      extra_applications: [:logger]
     ]
   end
 
