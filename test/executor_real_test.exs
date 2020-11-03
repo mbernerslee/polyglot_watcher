@@ -37,6 +37,17 @@ defmodule PolyglotWatcher.Executor.RealTest do
       assert mix_test_output =~ "0 failures"
       assert mix_test_output =~ "1 test"
     end
+
+    # test "can run mix test (all tests)" do
+    #  server_state = ServerStateBuilder.build()
+
+    #  mix_test_output =
+    #    capture_io(fn ->
+    #      Real.run_actions({[:mix_test], server_state})
+    #    end)
+
+    #  assert mix_test_output =~ "0 failures"
+    # end
   end
 
   describe "run_actions/2 - with a map" do

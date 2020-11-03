@@ -8,6 +8,7 @@ defmodule PolyglotWatcher.UserInput do
     ex f                  -  fixed mode: only run the most recently run test that failed (when elixir files are saved)
     ex /path/to/test.exs  -  fixed mode: only run that test (when elixir files are saved)
     ex d                  -  default mode: return to default elixir settings
+    ex a                  -  run 'mix test' (run all tests)
   """
 
   def determine_actions(user_input, server_state) do
@@ -18,9 +19,19 @@ defmodule PolyglotWatcher.UserInput do
       "ex d" ->
         default_mode(server_state)
 
+      "ex a" ->
+        mix_test(server_state)
+
       other ->
         maybe_enter_fixed_file_mode(other, server_state)
     end
+  end
+
+  def mix_test(server_state) do
+    {[
+       {:run_sys_cmd, "echo", Echo.pink("Running 'mix test'")},
+       :mix_test
+     ], server_state}
   end
 
   def maybe_enter_fixed_file_mode(user_input, server_state) do

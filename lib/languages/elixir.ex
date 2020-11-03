@@ -47,6 +47,12 @@ defmodule PolyglotWatcher.Languages.Elixir do
     {default_mode(test_path), server_state}
   end
 
+  def reset_mix_test_history(server_state, mix_test_output) do
+    server_state
+    |> put_in([:elixir, :failures], [])
+    |> add_mix_test_history(mix_test_output)
+  end
+
   def add_mix_test_history(server_state, mix_test_output) do
     mix_test_output = String.split(mix_test_output, "\n")
     failures = accumulate_failing_tests([], nil, mix_test_output)

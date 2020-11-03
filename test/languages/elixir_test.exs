@@ -240,4 +240,31 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
              } = ElixirLang.add_mix_test_history(server_state, test_output)
     end
   end
+
+  describe "reset_mix_test_history/2" do
+    test "removed failures & adds only new ones" do
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_elixir_failures(["test/path_test.exs"])
+
+      test_output = """
+        1) test add_mix_test_history/2 adds failing tests to the failures (PolyglotWatcher.Languages.ElixirTest)
+           test/languages/elixir_test.exs:154
+           Flunked!
+           code: flunk()
+           stacktrace:
+            test/languages/elixir_test.exs:157: (test)
+
+      ........
+
+      Finished in 0.1 seconds
+      9 tests, 1 failure
+
+      Randomized with seed 846778
+      """
+
+      result = ElixirLang.reset_mix_test_history(server_state, test_output)
+      assert %{elixir: %{failures: ["test/languages/elixir_test.exs:154"]}} = result
+    end
+  end
 end

@@ -113,4 +113,21 @@ defmodule PolyglotWatcher.UserInputTest do
       assert %{elixir: %{mode: :default}} = new_server_state
     end
   end
+
+  describe "determine_actions - run all tests" do
+    test "can reenter it" do
+      server_state = ServerStateBuilder.build()
+
+      assert {actions, new_server_state} = UserInput.determine_actions("ex a\n", server_state)
+
+      [
+        {:run_sys_cmd, "echo", ["-e", echo]},
+        :mix_test
+      ] = actions
+
+      assert echo =~ "Running 'mix test'"
+
+      assert %{elixir: %{mode: :default}} = new_server_state
+    end
+  end
 end

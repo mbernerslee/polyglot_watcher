@@ -49,6 +49,11 @@ defmodule PolyglotWatcher.Executor.Real do
     {IO.puts(output), ElixirLang.add_mix_test_history(server_state, output)}
   end
 
+  defp run_action(:mix_test, server_state) do
+    {output, _} = System.cmd("mix", ["test", "--color"])
+    {IO.puts(output), ElixirLang.reset_mix_test_history(server_state, output)}
+  end
+
   defp run_action({:run_elixir_fn, fun}, server_state), do: {fun.(), server_state}
 end
 
