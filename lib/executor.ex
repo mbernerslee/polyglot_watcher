@@ -1,10 +1,12 @@
 defmodule PolyglotWatcher.Executor do
+  alias PolyglotWatcher.Executor.Real
+
   def run_actions({actions, server_state}) do
     module().run_actions({actions, server_state})
   end
 
   defp module do
-    Application.get_env(:polyglot_watcher, :executor)
+    Application.get_env(:polyglot_watcher, :executor) || Real
   end
 end
 
