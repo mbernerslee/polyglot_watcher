@@ -6,6 +6,7 @@ defmodule PolyglotWatcher.MixProject do
       app: :polyglot_watcher,
       version: "0.1.0",
       elixir: "~> 1.10",
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       releases: [
@@ -15,6 +16,14 @@ defmodule PolyglotWatcher.MixProject do
         ]
       ]
     ]
+  end
+
+  defp elixirc_paths(:test) do
+    ["lib", "test/builders"]
+  end
+
+  defp elixirc_paths(_) do
+    ["lib"]
   end
 
   # Run "mix help compile.app" to learn about applications.

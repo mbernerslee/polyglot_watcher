@@ -1,5 +1,4 @@
 defmodule PolyglotWatcher.Executor do
-
   def run_actions({actions, server_state}) do
     module().run_actions({actions, server_state})
   end
@@ -29,8 +28,10 @@ defmodule PolyglotWatcher.Executor.Real do
 
   defp run_actions_chain({prev_action_result, server_state}, next) do
     actions = next[prev_action_result]
+
     {actions_result, server_state} = run_series_of_actions({actions[:run] || [], server_state})
-    run_actions_chain({actions_result, server_state}, actions[next])
+
+    run_actions_chain({actions_result, server_state}, actions[:next])
   end
 
   defp run_series_of_actions({actions, server_state}) do
@@ -39,20 +40,20 @@ defmodule PolyglotWatcher.Executor.Real do
     end)
   end
 
-  def run_action({:run_sys_cmd, "tput", _args}, server_state) do
+  defp run_action({:run_sys_cmd, "tput", _args}, server_state) do
     {"nope", server_state}
   end
 
-  def run_action({:run_sys_cmd, cmd, args}, server_state) do
+  defp run_action({:run_sys_cmd, cmd, args}, server_state) do
     {System.cmd(cmd, args, into: IO.stream(:stdio, :line)), server_state}
   end
 
-  def run_action({:mix_test, path}, server_state) do
+  defp run_action({:mix_test, path}, server_state) do
     {output, _} = System.cmd("mix", ["test", path, "--color"])
     {IO.puts(output), ElixirLang.add_mix_test_history(server_state, output)}
   end
 
-  def run_action({:run_elixir_fn, fun}, server_state), do: {fun.(), server_state}
+  defp run_action({:run_elixir_fn, fun}, server_state), do: {fun.(), server_state}
 end
 
 defmodule PolyglotWatcher.Executor.Test do

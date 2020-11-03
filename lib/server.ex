@@ -1,6 +1,6 @@
 defmodule PolyglotWatcher.Server do
   use GenServer
-  alias PolyglotWatcher.{Executor, UserInput, Inotifywait}
+  alias PolyglotWatcher.{Executor, Languages, UserInput, Inotifywait}
 
   @process_name :server
 
@@ -31,7 +31,8 @@ defmodule PolyglotWatcher.Server do
   def handle_info({_port, {:data, inotifywait_output}}, state) do
     state =
       inotifywait_output
-      |> Inotifywait.determine_actions(state)
+      |> Inotifywait.determine_language_module(state)
+      |> Languages.determine_actions()
       |> Executor.run_actions()
 
     {:noreply, state}

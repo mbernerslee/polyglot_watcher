@@ -35,16 +35,20 @@ defmodule PolyglotWatcher.ServerTest do
         elixir: %{mode: :default, failures: ["test/path/cool_test.exs:2"]}
       }
 
-      actual = Server.handle_info({:port, {:data, "some jank"}}, server_state)
-      expected = {:noreply, server_state}
-
-      assert actual == expected
+      assert {:noreply, server_state} ==
+               Server.handle_info({:port, {:data, "some jank"}}, server_state)
     end
+  end
 
-    #TODO test this betterer
-    test "given a real test path" do
-      server_state = %{port: "port", elixir: %{mode: :default, failures: []}}
-      Server.handle_info({:port, {:data, "./lib/ CLOSE_WRITE,CLOSE server.ex\n"}}, server_state)
+  describe "handle_call/3 - user_input" do
+    test "given some unrecognised jank replies with the server_state it was given" do
+      server_state = %{
+        port: "port",
+        elixir: %{mode: :default, failures: ["test/path/cool_test.exs:2"]}
+      }
+
+      assert {:noreply, server_state} ==
+               Server.handle_call({:user_input, "some jank"}, :from, server_state)
     end
   end
 end

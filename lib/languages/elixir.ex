@@ -1,5 +1,7 @@
 defmodule PolyglotWatcher.Languages.Elixir do
   alias PolyglotWatcher.Echo
+  alias PolyglotWatcher.Languages.Language
+  @behaviour Language
 
   @ex ".ex"
   @exs ".exs"
@@ -8,6 +10,12 @@ defmodule PolyglotWatcher.Languages.Elixir do
   def ex, do: @ex
   def exs, do: @exs
 
+  @impl Language
+  def file_extensions do
+    [@ex, @exs]
+  end
+
+  @impl Language
   def determine_actions(file, server_state) do
     case mode(server_state) do
       {:fixed_previous, test_path} ->
@@ -21,16 +29,16 @@ defmodule PolyglotWatcher.Languages.Elixir do
          ], server_state}
 
       _ ->
-        do_determine_actions(file, server_state)
+        default_mode_actions(file, server_state)
     end
   end
 
-  defp do_determine_actions(%{extension: @ex, file_path: file_path}, server_state) do
-    {file_path |> test_path() |> actions(), server_state}
+  defp default_mode_actions(%{extension: @ex, file_path: file_path}, server_state) do
+    {file_path |> test_path() |> default_mode_actions(), server_state}
   end
 
-  defp do_determine_actions(%{extension: @exs, file_path: test_path}, server_state) do
-    {actions(test_path), server_state}
+  defp default_mode_actions(%{extension: @exs, file_path: test_path}, server_state) do
+    {default_mode_actions(test_path), server_state}
   end
 
   def add_mix_test_history(server_state, mix_test_output) do
@@ -63,7 +71,7 @@ defmodule PolyglotWatcher.Languages.Elixir do
     end
   end
 
-  defp actions(test_path) do
+  defp default_mode_actions(test_path) do
     %{
       run: [{:run_elixir_fn, fn -> File.exists?(test_path) end}],
       next: %{
