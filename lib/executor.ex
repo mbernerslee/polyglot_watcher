@@ -6,7 +6,7 @@ defmodule PolyglotWatcher.Executor do
   end
 
   defp module do
-    Application.get_env(:polyglot_watcher, :executor) || Real
+    Application.get_env(:polyglot_watcher, :executor, Real)
   end
 end
 
