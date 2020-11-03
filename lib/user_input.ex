@@ -18,9 +18,37 @@ defmodule PolyglotWatcher.UserInput do
       "ex d" ->
         default_mode(server_state)
 
-      _ ->
-        {[{:run_sys_cmd, "echo", Echo.pink(@usage)}], server_state}
+      other ->
+        maybe_enter_fixed_file_mode(other, server_state)
     end
+  end
+
+  def maybe_enter_fixed_file_mode(user_input, server_state) do
+    case String.split(user_input, "ex ") do
+      ["", possible_file_path] ->
+        if legit_looking_test_file?(possible_file_path) do
+          {[
+             {:run_sys_cmd, "echo", Echo.pink("Switching to fixed file mode")},
+             {:run_sys_cmd, "echo",
+              Echo.pink("I'll only run 'mix test #{possible_file_path}' unless told otherwise")},
+             {:run_sys_cmd, "echo", Echo.pink("Return to default mode by entering 'ex d'")},
+             {:mix_test, possible_file_path}
+           ], put_in(server_state, [:elixir, :mode], {:fixed_file, possible_file_path})}
+        else
+          echo_usage(server_state)
+        end
+
+      _ ->
+        echo_usage(server_state)
+    end
+  end
+
+  defp echo_usage(server_state) do
+    {[{:run_sys_cmd, "echo", Echo.pink(@usage)}], server_state}
+  end
+
+  defp legit_looking_test_file?(file_path) do
+    Regex.match?(~r|^test/.+_test.exs.*|, file_path)
   end
 
   defp default_mode(server_state) do
@@ -35,7 +63,7 @@ defmodule PolyglotWatcher.UserInput do
            {:run_sys_cmd, "echo", Echo.pink("Switching to fixed mode")},
            {:run_sys_cmd, "echo",
             Echo.pink("Will only run 'mix test #{most_recent}' unless told otherwise...")},
-           {:run_sys_cmd, "echo", Echo.pink("Retern to default mode by entering 'ex d'")},
+           {:run_sys_cmd, "echo", Echo.pink("Return to default mode by entering 'ex d'")},
            {:mix_test, most_recent}
          ], put_in(server_state, [:elixir, :mode], :fixed_previous)}
 

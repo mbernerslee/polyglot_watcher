@@ -19,26 +19,32 @@ defmodule PolyglotWatcher.Languages.Elixir do
   def determine_actions(file, server_state) do
     case mode(server_state) do
       {:fixed_previous, test_path} ->
-        {[
-           {:run_sys_cmd, "tput", ["reset"]},
-           {:run_sys_cmd, "echo", Echo.pink("Running 'mix test #{test_path}'")},
-           {:mix_test, test_path},
-           {:run_sys_cmd, "echo",
-            Echo.pink("I've been told to ONLY run this one FIXED path btw!")},
-           {:run_sys_cmd, "echo", Echo.pink("Retern to default mode by entering 'ex d'")}
-         ], server_state}
+        fixed_path(test_path, server_state)
+
+      {:fixed_file, test_path} ->
+        fixed_path(test_path, server_state)
 
       _ ->
-        default_mode_actions(file, server_state)
+        default_mode(file, server_state)
     end
   end
 
-  defp default_mode_actions(%{extension: @ex, file_path: file_path}, server_state) do
-    {file_path |> test_path() |> default_mode_actions(), server_state}
+  defp fixed_path(test_path, server_state) do
+    {[
+       {:run_sys_cmd, "tput", ["reset"]},
+       {:run_sys_cmd, "echo", Echo.pink("Running 'mix test #{test_path}'")},
+       {:mix_test, test_path},
+       {:run_sys_cmd, "echo", Echo.pink("I've been told to ONLY run this one FIXED path btw!")},
+       {:run_sys_cmd, "echo", Echo.pink("Retern to default mode by entering 'ex d'")}
+     ], server_state}
   end
 
-  defp default_mode_actions(%{extension: @exs, file_path: test_path}, server_state) do
-    {default_mode_actions(test_path), server_state}
+  defp default_mode(%{extension: @ex, file_path: file_path}, server_state) do
+    {file_path |> test_path() |> default_mode(), server_state}
+  end
+
+  defp default_mode(%{extension: @exs, file_path: test_path}, server_state) do
+    {default_mode(test_path), server_state}
   end
 
   def add_mix_test_history(server_state, mix_test_output) do
@@ -71,7 +77,7 @@ defmodule PolyglotWatcher.Languages.Elixir do
     end
   end
 
-  defp default_mode_actions(test_path) do
+  defp default_mode(test_path) do
     %{
       run: [{:run_elixir_fn, fn -> File.exists?(test_path) end}],
       next: %{
