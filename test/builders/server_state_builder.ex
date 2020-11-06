@@ -1,6 +1,6 @@
 defmodule PolyglotWatcher.ServerStateBuilder do
   def build do
-    %{port: "port", elixir: %{mode: :default, failures: []}}
+    %{watcher_pid: :watcher_pid, elixir: %{mode: :default, failures: []}}
   end
 
   def with_elixir_fixed_previous_mode(server_state) do

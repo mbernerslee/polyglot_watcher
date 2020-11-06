@@ -1,6 +1,6 @@
 defmodule PolyglotWatcher.Server do
   use GenServer
-  alias PolyglotWatcher.{Executor, Languages, UserInput, Inotifywait}
+  alias PolyglotWatcher.{Executor, Languages, UserInput, FileSystemChange}
 
   @process_name :server
 
@@ -19,22 +19,25 @@ defmodule PolyglotWatcher.Server do
 
   @impl true
   def init(_) do
-    port = Port.open({:spawn, run_inotifywait_command()}, [:binary])
-
-    Port.connect(port, self())
     listen_for_user_input()
+    {:ok, watcher_pid} = FileSystem.start_link(dirs: ["."])
 
-    {:ok, %{port: port, elixir: %{mode: :default, failures: []}}}
+    FileSystem.subscribe(watcher_pid)
+
+    {:ok, %{watcher_pid: watcher_pid, elixir: %{mode: :default, failures: []}}}
   end
 
   @impl true
-  def handle_info({_port, {:data, inotifywait_output}}, state) do
-    state =
-      inotifywait_output
-      |> Inotifywait.determine_language_module(state)
-      |> Languages.determine_actions()
-      |> Executor.run_actions()
+  def handle_info({:file_event, _pid, {file_path, [:modified, :closed]}}, state) do
+    file_path
+    |> FileSystemChange.determine_language_module(state)
+    |> Languages.determine_actions()
+    |> Executor.run_actions()
 
+    {:noreply, state}
+  end
+
+  def handle_info({:file_event, _pid, _}, state) do
     {:noreply, state}
   end
 
@@ -47,10 +50,6 @@ defmodule PolyglotWatcher.Server do
 
     listen_for_user_input()
     {:noreply, state}
-  end
-
-  defp run_inotifywait_command do
-    "#{Path.join(:code.priv_dir(:polyglot_watcher), "zombie_killer")} inotifywait . -rmqe close_write"
   end
 
   defp listen_for_user_input do
