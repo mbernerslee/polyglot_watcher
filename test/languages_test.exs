@@ -9,8 +9,7 @@ defmodule PolyglotWatcher.Languages.ExampleLanguageModule do
 
   @impl Language
   def determine_actions(_file, server_state) do
-    {[{:run_sys_cmd, "echo", "hello there mother!"}],
-     Map.put(server_state, :modified, "server state")}
+    {[{:puts, "hello there mother!"}], Map.put(server_state, :modified, "server state")}
   end
 end
 
@@ -36,7 +35,7 @@ defmodule PolyglotWatcher.LanguagesTest do
         )
 
       assert {actions, new_server_state} = result
-      assert actions == [{:run_sys_cmd, "echo", "hello there mother!"}]
+      assert actions == [{:puts, "hello there mother!"}]
       assert new_server_state == %{some: "map", modified: "server state"}
     end
   end

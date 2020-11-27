@@ -22,7 +22,7 @@ defmodule PolyglotWatcher.Executor.RealTest do
       server_state = ServerStateBuilder.build()
 
       assert capture_io(fn ->
-               Real.run_actions({[{:run_sys_cmd, "echo", ["hello dave"]}], server_state})
+               Real.run_actions({[{:puts, "hello dave"}], server_state})
              end) =~ "hello dave"
     end
 
@@ -37,17 +37,6 @@ defmodule PolyglotWatcher.Executor.RealTest do
       assert mix_test_output =~ "0 failures"
       assert mix_test_output =~ "1 test"
     end
-
-    # test "can run mix test (all tests)" do
-    #  server_state = ServerStateBuilder.build()
-
-    #  mix_test_output =
-    #    capture_io(fn ->
-    #      Real.run_actions({[:mix_test], server_state})
-    #    end)
-
-    #  assert mix_test_output =~ "0 failures"
-    # end
   end
 
   describe "run_actions/2 - with a map" do
@@ -58,12 +47,12 @@ defmodule PolyglotWatcher.Executor.RealTest do
         next: %{
           false: %{
             run: [
-              {:run_sys_cmd, "echo", ["-e", "will not echo false thing"]}
+              {:puts, "will not echo false thing"}
             ]
           },
           true: %{
             run: [
-              {:run_sys_cmd, "echo", ["WILL echo true thing!"]}
+              {:puts, "WILL echo true thing!"}
             ]
           }
         },
@@ -84,29 +73,29 @@ defmodule PolyglotWatcher.Executor.RealTest do
       actions = %{
         next: %{
           false: %{
-            run: [{:run_sys_cmd, "echo", ["-e", "will not echo false thing"]}]
+            run: [{:puts, "will not echo false thing"}]
           },
           true: %{
             run: [
-              {:run_sys_cmd, "echo", ["-e", "I WILL echo true thing"]},
+              {:puts, "I WILL echo true thing"},
               {:run_elixir_fn, fn -> 1 end}
             ],
             next: %{
               1 => %{
                 run: [
-                  {:run_sys_cmd, "echo", ["-e", "I hit 1!"]},
+                  {:puts, "I hit 1!"},
                   {:run_elixir_fn, fn -> 3 end}
                 ],
                 next: %{
                   3 => %{
-                    run: [{:run_sys_cmd, "echo", ["-e", "I hit 3!"]}]
+                    run: [{:puts, "I hit 3!"}]
                   },
                   4 => %{
-                    run: [{:run_sys_cmd, "echo", ["-e", "I hit 4!"]}]
+                    run: [{:puts, "I hit 4!"}]
                   }
                 }
               },
-              2 => %{run: [{:run_sys_cmd, "echo", ["-e", "I hit 2!"]}]}
+              2 => %{run: [{:puts, "I hit 2!"}]}
             }
           }
         },
@@ -115,7 +104,13 @@ defmodule PolyglotWatcher.Executor.RealTest do
 
       io = capture_io(fn -> Real.run_actions({actions, server_state}) end)
 
-      assert io == "I WILL echo true thing\nI hit 1!\nI hit 3!\n"
+      assert io =~ "I WILL echo true thing"
+      assert io =~ "I hit 1!"
+      assert io =~ "I hit 3!"
+
+      refute io =~ "will not echo false thing"
+      refute io =~ "I hit 2!"
+      refute io =~ "I hit 4!"
     end
   end
 end

@@ -1,6 +1,4 @@
 defmodule PolyglotWatcher.UserInput do
-  alias PolyglotWatcher.Echo
-
   @usage """
   Usage
 
@@ -29,7 +27,7 @@ defmodule PolyglotWatcher.UserInput do
 
   def mix_test(server_state) do
     {[
-       {:run_sys_cmd, "echo", Echo.pink("Running 'mix test'")},
+       {:puts, "Running 'mix test'"},
        :mix_test
      ], server_state}
   end
@@ -39,10 +37,9 @@ defmodule PolyglotWatcher.UserInput do
       ["", possible_file_path] ->
         if legit_looking_test_file?(possible_file_path) do
           {[
-             {:run_sys_cmd, "echo", Echo.pink("Switching to fixed file mode")},
-             {:run_sys_cmd, "echo",
-              Echo.pink("I'll only run 'mix test #{possible_file_path}' unless told otherwise")},
-             {:run_sys_cmd, "echo", Echo.pink("Return to default mode by entering 'ex d'")},
+             {:puts, "Switching to fixed file mode"},
+             {:puts, "I'll only run 'mix test #{possible_file_path}' unless told otherwise"},
+             {:puts, "Return to default mode by entering 'ex d'"},
              {:mix_test, possible_file_path}
            ], put_in(server_state, [:elixir, :mode], {:fixed_file, possible_file_path})}
         else
@@ -55,7 +52,7 @@ defmodule PolyglotWatcher.UserInput do
   end
 
   defp echo_usage(server_state) do
-    {[{:run_sys_cmd, "echo", Echo.pink(@usage)}], server_state}
+    {[{:puts, @usage}], server_state}
   end
 
   defp legit_looking_test_file?(file_path) do
@@ -63,7 +60,7 @@ defmodule PolyglotWatcher.UserInput do
   end
 
   defp default_mode(server_state) do
-    {[{:run_sys_cmd, "echo", Echo.pink("Switching back to default mode")}],
+    {[{:puts, "Switching back to default mode"}],
      put_in(server_state, [:elixir, :mode], :default)}
   end
 
@@ -71,18 +68,17 @@ defmodule PolyglotWatcher.UserInput do
     case server_state[:elixir][:failures] do
       [most_recent | _] ->
         {[
-           {:run_sys_cmd, "echo", Echo.pink("Switching to fixed mode")},
-           {:run_sys_cmd, "echo",
-            Echo.pink("Will only run 'mix test #{most_recent}' unless told otherwise...")},
-           {:run_sys_cmd, "echo", Echo.pink("Return to default mode by entering 'ex d'")},
+           {:puts, "Switching to fixed mode"},
+           {:puts, "Will only run 'mix test #{most_recent}' unless told otherwise..."},
+           {:puts, "Return to default mode by entering 'ex d'"},
            {:mix_test, most_recent}
          ], put_in(server_state, [:elixir, :mode], :fixed_previous)}
 
       _ ->
         {[
-           {:run_sys_cmd, "echo",
-            Echo.red("Cannot switch to fixed mode because my memory of failing tests is empty")},
-           {:run_sys_cmd, "echo", Echo.red("so I don't know which test you want me to run...")}
+           {:puts, :red,
+            "Cannot switch to fixed mode because my memory of failing tests is empty"},
+           {:puts, :red, "so I don't know which test you want me to run..."}
          ], server_state}
     end
   end

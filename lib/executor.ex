@@ -12,6 +12,7 @@ end
 
 defmodule PolyglotWatcher.Executor.Real do
   alias PolyglotWatcher.Languages.Elixir, as: ElixirLang
+  alias PolyglotWatcher.Puts
 
   def run_actions({%{run: actions, next: next}, server_state}) do
     {actions, server_state}
@@ -46,6 +47,15 @@ defmodule PolyglotWatcher.Executor.Real do
     {System.cmd(cmd, args, into: IO.stream(:stdio, :line)), server_state}
   end
 
+  defp run_action({:puts, message}, server_state) do
+    {Puts.put(message), server_state}
+  end
+
+  defp run_action({:puts, colour, message}, server_state) do
+    {Puts.put(message, colour), server_state}
+  end
+
+  # TODO don't have elixir lang specific code in here. call out to an elixir actions exectuor module or something
   defp run_action({:mix_test, path}, server_state) do
     {output, _} = System.cmd("mix", ["test", path, "--color"])
     {IO.puts(output), ElixirLang.add_mix_test_history(server_state, output)}

@@ -10,7 +10,7 @@ defmodule PolyglotWatcher.UserInputTest do
       server_state = ServerStateBuilder.build()
 
       assert {actions, ^server_state} = UserInput.determine_actions("asdsa", server_state)
-      assert [{:run_sys_cmd, "echo", ["-e", usage_instructions]}] = actions
+      assert [{:puts, usage_instructions}] = actions
 
       assert Regex.match?(
                ~r|ex f.*fixed mode: only run the most recently run test that failed \(when elixir files are saved\)|,
@@ -28,9 +28,9 @@ defmodule PolyglotWatcher.UserInputTest do
       assert {actions, new_server_state} = UserInput.determine_actions("ex f\n", server_state)
 
       [
-        {:run_sys_cmd, "echo", ["-e", first_echo]},
-        {:run_sys_cmd, "echo", ["-e", second_echo]},
-        {:run_sys_cmd, "echo", ["-e", third_echo]},
+        {:puts, first_echo},
+        {:puts, second_echo},
+        {:puts, third_echo},
         {:mix_test, "test/path_test.exs:10"}
       ] = actions
 
@@ -49,8 +49,8 @@ defmodule PolyglotWatcher.UserInputTest do
       assert {actions, new_server_state} = UserInput.determine_actions("ex f\n", server_state)
 
       [
-        {:run_sys_cmd, "echo", ["-e", first_echo]},
-        {:run_sys_cmd, "echo", ["-e", second_echo]}
+        {:puts, :red, first_echo},
+        {:puts, :red, second_echo}
       ] = actions
 
       assert first_echo =~
@@ -70,9 +70,9 @@ defmodule PolyglotWatcher.UserInputTest do
                UserInput.determine_actions("ex test/example_test.exs:9\n", server_state)
 
       [
-        {:run_sys_cmd, "echo", ["-e", first_echo]},
-        {:run_sys_cmd, "echo", ["-e", second_echo]},
-        {:run_sys_cmd, "echo", ["-e", third_echo]},
+        {:puts, first_echo},
+        {:puts, second_echo},
+        {:puts, third_echo},
         {:mix_test, "test/example_test.exs:9"}
       ] = actions
 
@@ -92,7 +92,7 @@ defmodule PolyglotWatcher.UserInputTest do
       assert {actions, new_server_state} =
                UserInput.determine_actions("ex total_jank\n", server_state)
 
-      assert [{:run_sys_cmd, "echo", ["-e", _usage_instructions]}] = actions
+      assert [{:puts, _usage_instructions}] = actions
 
       assert %{elixir: %{mode: :default}} = new_server_state
     end
@@ -106,7 +106,7 @@ defmodule PolyglotWatcher.UserInputTest do
 
       assert {actions, new_server_state} = UserInput.determine_actions("ex d\n", server_state)
 
-      [{:run_sys_cmd, "echo", ["-e", echo]}] = actions
+      [{:puts, echo}] = actions
 
       assert echo =~ "Switching back to default mode"
 
@@ -120,10 +120,7 @@ defmodule PolyglotWatcher.UserInputTest do
 
       assert {actions, new_server_state} = UserInput.determine_actions("ex a\n", server_state)
 
-      [
-        {:run_sys_cmd, "echo", ["-e", echo]},
-        :mix_test
-      ] = actions
+      [{:puts, echo}, :mix_test] = actions
 
       assert echo =~ "Running 'mix test'"
 

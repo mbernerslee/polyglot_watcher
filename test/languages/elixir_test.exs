@@ -10,7 +10,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
     test "finds the equivalent test file" do
       server_state = ServerStateBuilder.build()
 
-      assert {actions, new_server_state} =
+      assert {actions, _new_server_state} =
                ElixirLang.determine_actions(
                  %{extension: @ex, file_path: "lib/very/cool.ex"},
                  server_state
@@ -21,17 +21,14 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
                  false: %{
                    run: [
                      {:run_sys_cmd, "tput", ["reset"]},
-                     {:run_sys_cmd, "echo",
-                      ["-e", "\e[35mNo test found at test/very/cool_test.exs\e[39m"]},
-                     {:run_sys_cmd, "echo",
-                      ["-e", "\e[35mUh-oh, You don't have tests for this do you?\e[39m"]}
+                     {:puts, "No test found at test/very/cool_test.exs"},
+                     {:puts, "Uh-oh, You don't have tests for this do you?"}
                    ]
                  },
                  true: %{
                    run: [
                      {:run_sys_cmd, "tput", ["reset"]},
-                     {:run_sys_cmd, "echo",
-                      ["-e", "\e[35mRunning mix test test/very/cool_test.exs\e[39m"]},
+                     {:puts, "Running mix test test/very/cool_test.exs"},
                      {:mix_test, "test/very/cool_test.exs"}
                    ]
                  }
@@ -55,7 +52,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
     test "given a lib file that doesn't exist, the find file function returns false" do
       server_state = ServerStateBuilder.build()
 
-      assert {actions, new_server_state} =
+      assert {actions, _new_server_state} =
                ElixirLang.determine_actions(
                  %{extension: @ex, file_path: "lib/very/cool.ex"},
                  server_state
@@ -69,7 +66,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
     test "given a lib file that realtes to a test that DOES exist, the find file function returns true" do
       server_state = ServerStateBuilder.build()
 
-      assert {actions, new_server_state} =
+      assert {actions, _new_server_state} =
                ElixirLang.determine_actions(
                  %{extension: @ex, file_path: "lib/languages/elixir.ex"},
                  server_state
@@ -116,7 +113,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
         |> ServerStateBuilder.with_elixir_fixed_previous_mode()
         |> ServerStateBuilder.with_elixir_failures(["test/languages/elixir_test.exs:103"])
 
-      assert {actions, new_server_state} =
+      assert {actions, _new_server_state} =
                ElixirLang.determine_actions(
                  %{extension: @exs, file_path: "test/nonsense/path/jank_test.exs"},
                  server_state
@@ -124,13 +121,10 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
 
       assert [
                {:run_sys_cmd, "tput", ["reset"]},
-               {:run_sys_cmd, "echo",
-                ["-e", "\e[35mRunning 'mix test test/languages/elixir_test.exs:103'\e[39m"]},
+               {:puts, "Running 'mix test test/languages/elixir_test.exs:103'"},
                {:mix_test, "test/languages/elixir_test.exs:103"},
-               {:run_sys_cmd, "echo",
-                ["-e", "\e[35mI've been told to ONLY run this one FIXED path btw!\e[39m"]},
-               {:run_sys_cmd, "echo",
-                ["-e", "\e[35mRetern to default mode by entering 'ex d'\e[39m"]}
+               {:puts, "I've been told to ONLY run this one FIXED path btw!"},
+               {:puts, "Retern to default mode by entering 'ex d'"}
              ] = actions
     end
 
@@ -140,7 +134,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
         |> ServerStateBuilder.with_elixir_fixed_previous_mode()
         |> ServerStateBuilder.with_elixir_failures([])
 
-      assert {actions, new_server_state} =
+      assert {actions, _new_server_state} =
                ElixirLang.determine_actions(
                  %{extension: @exs, file_path: "test/nonsense/path/jank_test.exs"},
                  server_state
@@ -156,7 +150,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
         ServerStateBuilder.build()
         |> ServerStateBuilder.with_elixir_fixed_file_mode("test/languages/elixir_test.exs:103")
 
-      assert {actions, new_server_state} =
+      assert {actions, _new_server_state} =
                ElixirLang.determine_actions(
                  %{extension: @exs, file_path: "test/nonsense/path/jank_test.exs"},
                  server_state
@@ -164,13 +158,10 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
 
       assert [
                {:run_sys_cmd, "tput", ["reset"]},
-               {:run_sys_cmd, "echo",
-                ["-e", "\e[35mRunning 'mix test test/languages/elixir_test.exs:103'\e[39m"]},
+               {:puts, "Running 'mix test test/languages/elixir_test.exs:103'"},
                {:mix_test, "test/languages/elixir_test.exs:103"},
-               {:run_sys_cmd, "echo",
-                ["-e", "\e[35mI've been told to ONLY run this one FIXED path btw!\e[39m"]},
-               {:run_sys_cmd, "echo",
-                ["-e", "\e[35mRetern to default mode by entering 'ex d'\e[39m"]}
+               {:puts, "I've been told to ONLY run this one FIXED path btw!"},
+               {:puts, "Retern to default mode by entering 'ex d'"}
              ] = actions
     end
   end

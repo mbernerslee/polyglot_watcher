@@ -1,5 +1,4 @@
 defmodule PolyglotWatcher.Languages.Elixir do
-  alias PolyglotWatcher.Echo
   alias PolyglotWatcher.Languages.Language
   @behaviour Language
 
@@ -29,24 +28,6 @@ defmodule PolyglotWatcher.Languages.Elixir do
     end
   end
 
-  defp fixed_path(test_path, server_state) do
-    {[
-       {:run_sys_cmd, "tput", ["reset"]},
-       {:run_sys_cmd, "echo", Echo.pink("Running 'mix test #{test_path}'")},
-       {:mix_test, test_path},
-       {:run_sys_cmd, "echo", Echo.pink("I've been told to ONLY run this one FIXED path btw!")},
-       {:run_sys_cmd, "echo", Echo.pink("Retern to default mode by entering 'ex d'")}
-     ], server_state}
-  end
-
-  defp default_mode(%{extension: @ex, file_path: file_path}, server_state) do
-    {file_path |> test_path() |> default_mode(), server_state}
-  end
-
-  defp default_mode(%{extension: @exs, file_path: test_path}, server_state) do
-    {default_mode(test_path), server_state}
-  end
-
   def reset_mix_test_history(server_state, mix_test_output) do
     server_state
     |> put_in([:elixir, :failures], [])
@@ -58,6 +39,24 @@ defmodule PolyglotWatcher.Languages.Elixir do
     failures = accumulate_failing_tests([], nil, mix_test_output)
 
     update_in(server_state, [:elixir, :failures], fn old -> failures ++ old end)
+  end
+
+  defp fixed_path(test_path, server_state) do
+    {[
+       {:run_sys_cmd, "tput", ["reset"]},
+       {:puts, "Running 'mix test #{test_path}'"},
+       {:mix_test, test_path},
+       {:puts, "I've been told to ONLY run this one FIXED path btw!"},
+       {:puts, "Retern to default mode by entering 'ex d'"}
+     ], server_state}
+  end
+
+  defp default_mode(%{extension: @ex, file_path: file_path}, server_state) do
+    {file_path |> test_path() |> default_mode(), server_state}
+  end
+
+  defp default_mode(%{extension: @exs, file_path: test_path}, server_state) do
+    {default_mode(test_path), server_state}
   end
 
   defp accumulate_failing_tests(acc, _, []), do: acc
@@ -90,15 +89,15 @@ defmodule PolyglotWatcher.Languages.Elixir do
         true => %{
           run: [
             {:run_sys_cmd, "tput", ["reset"]},
-            {:run_sys_cmd, "echo", Echo.pink("Running mix test #{test_path}")},
+            {:puts, "Running mix test #{test_path}"},
             {:mix_test, test_path}
           ]
         },
         false => %{
           run: [
             {:run_sys_cmd, "tput", ["reset"]},
-            {:run_sys_cmd, "echo", Echo.pink("No test found at #{test_path}")},
-            {:run_sys_cmd, "echo", Echo.pink("Uh-oh, You don't have tests for this do you?")}
+            {:puts, "No test found at #{test_path}"},
+            {:puts, "Uh-oh, You don't have tests for this do you?"}
           ]
         }
       }
