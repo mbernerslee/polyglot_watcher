@@ -22,7 +22,7 @@ defmodule PolyglotWatcher.Executor.RealTest do
       server_state = ServerStateBuilder.build()
 
       assert capture_io(fn ->
-               Real.run_actions({[{:puts, "hello dave"}], server_state})
+               Real.run_actions({[{:run_sys_cmd, "echo", ["hello dave"]}], server_state})
              end) =~ "hello dave"
     end
 

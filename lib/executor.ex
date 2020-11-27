@@ -56,6 +56,7 @@ defmodule PolyglotWatcher.Executor.Real do
   end
 
   # TODO don't have elixir lang specific code in here. call out to an elixir actions exectuor module or something
+  # TODO use hoyons magic to solve the problem of wanting text to output on the screen line by line AND save it to a variable for parsing
   defp run_action({:mix_test, path}, server_state) do
     {output, _} = System.cmd("mix", ["test", path, "--color"])
     {IO.puts(output), ElixirLang.add_mix_test_history(server_state, output)}
