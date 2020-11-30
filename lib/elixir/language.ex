@@ -38,14 +38,28 @@ defmodule PolyglotWatcher.Elixir.Language do
         {[], set_mode(server_state, {:fix_all, :mix_test})}
 
       [fail | _rest] ->
+        file = trim_line_number(fail)
+
         {%{
            run: [Actions.mix_test(fail)],
            next: %{
-             0 => %{run: [Actions.fix_all_with_file(fail)]},
-             :fallback => %{run: [Actions.run_single_again()]}
+             0 => %{
+               run: [
+                 Actions.mix_test(fail)
+               ],
+               # TODO make the executor actually run this function
+               update_server_state: fn server_state ->
+                 set_mode(server_state, {:fix_all, :file, file})
+               end
+             },
+             :fallback => %{run: []}
            }
          }, server_state}
     end
+  end
+
+  defp trim_line_number(file) do
+    file |> String.split(":") |> hd()
   end
 
   def reset_mix_test_history(server_state, mix_test_output) do
