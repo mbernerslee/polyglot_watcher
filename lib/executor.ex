@@ -35,6 +35,10 @@ defmodule PolyglotWatcher.Executor.Real do
 
     actions = next[prev_action_result] || next[:fallback]
 
+    server_state_fun = next[:update_server_state] || fn x -> x end
+
+    server_state = server_state_fun.(server_state)
+
     {actions_result, server_state} = run_series_of_actions({actions[:run] || [], server_state})
 
     run_actions_tree({actions_result, server_state}, actions[:next])

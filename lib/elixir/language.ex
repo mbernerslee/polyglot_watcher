@@ -40,19 +40,20 @@ defmodule PolyglotWatcher.Elixir.Language do
       [fail | _rest] ->
         file = trim_line_number(fail)
 
+        # TODO move all this to happen on initial run
         {%{
            run: [Actions.mix_test(fail)],
            next: %{
              0 => %{
-               run: [
-                 Actions.mix_test(fail)
-               ],
+               run: [Actions.mix_test(file)],
                # TODO make the executor actually run this function
                update_server_state: fn server_state ->
                  set_mode(server_state, {:fix_all, :file, file})
                end
              },
-             :fallback => %{run: []}
+             :fallback => %{
+               run: [Actions.mix_test(fail)]
+             }
            }
          }, server_state}
     end
