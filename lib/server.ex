@@ -1,6 +1,6 @@
 defmodule PolyglotWatcher.Server do
   use GenServer
-  alias PolyglotWatcher.{Executor, Languages, UserInput, FileSystemChange}
+  alias PolyglotWatcher.{Executor, Languages, UserInput, FileSystemChange, Puts}
 
   @process_name :server
 
@@ -17,6 +17,7 @@ defmodule PolyglotWatcher.Server do
     GenServer.start_link(__MODULE__, [], genserver_options)
   end
 
+  # TODO add a test for let's go
   @impl true
   def init(_) do
     listen_for_user_input()
@@ -24,6 +25,7 @@ defmodule PolyglotWatcher.Server do
 
     FileSystem.subscribe(watcher_pid)
 
+    Puts.put("Let's go...")
     {:ok, %{watcher_pid: watcher_pid, elixir: %{mode: :default, failures: []}}}
   end
 

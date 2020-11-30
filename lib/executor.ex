@@ -11,13 +11,12 @@ defmodule PolyglotWatcher.Executor do
 end
 
 defmodule PolyglotWatcher.Executor.Real do
-  alias PolyglotWatcher.Languages.Elixir, as: ElixirLang
   alias PolyglotWatcher.Puts
 
   def run_actions({%{run: actions, next: next}, server_state}) do
     {actions, server_state}
     |> run_series_of_actions()
-    |> run_actions_chain(next)
+    |> run_actions_tree(next)
   end
 
   def run_actions({actions, server_state}) when is_list(actions) do
@@ -27,14 +26,18 @@ defmodule PolyglotWatcher.Executor.Real do
 
   def run_actions({_, server_state}), do: server_state
 
-  defp run_actions_chain({_last_action_result, server_state}, nil), do: server_state
+  defp run_actions_tree({_last_action_result, server_state}, nil), do: server_state
 
-  defp run_actions_chain({prev_action_result, server_state}, next) do
-    actions = next[prev_action_result]
+  defp run_actions_tree({prev_action_result, server_state}, next) do
+    IO.inspect(prev_action_result, label: "prev_action_result")
+    IO.inspect(server_state, label: "server_state")
+    IO.inspect(next, label: "next")
+
+    actions = next[prev_action_result] || next[:fallback]
 
     {actions_result, server_state} = run_series_of_actions({actions[:run] || [], server_state})
 
-    run_actions_chain({actions_result, server_state}, actions[:next])
+    run_actions_tree({actions_result, server_state}, actions[:next])
   end
 
   defp run_series_of_actions({actions, server_state}) do
@@ -55,16 +58,9 @@ defmodule PolyglotWatcher.Executor.Real do
     {Puts.put(message, colour), server_state}
   end
 
-  # TODO don't have elixir lang specific code in here. call out to an elixir actions exectuor module or something
   # TODO use hoyons magic to solve the problem of wanting text to output on the screen line by line AND save it to a variable for parsing
-  defp run_action({:mix_test, path}, server_state) do
-    {output, _} = System.cmd("mix", ["test", path, "--color"])
-    {IO.puts(output), ElixirLang.add_mix_test_history(server_state, output)}
-  end
-
-  defp run_action(:mix_test, server_state) do
-    {output, _} = System.cmd("mix", ["test", "--color"])
-    {IO.puts(output), ElixirLang.reset_mix_test_history(server_state, output)}
+  defp run_action({:module_action, module, args}, server_state) do
+    module.run_action(args, server_state)
   end
 
   defp run_action({:run_elixir_fn, fun}, server_state), do: {fun.(), server_state}

@@ -1,7 +1,7 @@
 defmodule PolyglotWatcher.FileSystemChangeTest do
   use ExUnit.Case, async: true
   alias PolyglotWatcher.{FileSystemChange, ServerStateBuilder}
-  alias PolyglotWatcher.Languages.Elixir, as: ElixirLang
+  alias PolyglotWatcher.Elixir.Language, as: ElixirLang
 
   describe "determine_language_module/2" do
     test "given jank returns no actions & does not change the server state" do

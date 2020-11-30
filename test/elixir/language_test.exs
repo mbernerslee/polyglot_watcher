@@ -1,17 +1,55 @@
-defmodule PolyglotWatcher.Languages.ElixirTest do
+defmodule PolyglotWatcher.Elixir.LanguageTest do
   use ExUnit.Case, async: true
-  alias PolyglotWatcher.Languages.Elixir, as: ElixirLang
+  alias PolyglotWatcher.Elixir.Language
+  alias PolyglotWatcher.Elixir.Actions
   alias PolyglotWatcher.ServerStateBuilder
 
-  @ex ElixirLang.ex()
-  @exs ElixirLang.exs()
+  @ex Language.ex()
+  @exs Language.exs()
+
+  describe "determine_actions/2 - fix_all mode" do
+    test "runs mix test regardless of which file changed" do
+      failures = [
+        "test/elixir/language_test.exs:10",
+        "test/elixir/language_test.exs:24"
+      ]
+
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_elixir_failures(failures)
+        |> ServerStateBuilder.with_elixir_fix_all_mode(:run_single)
+
+      assert {actions, _new_server_state} =
+               Language.determine_actions(
+                 %{extension: @ex, file_path: "lib/elixir/language.ex"},
+                 server_state
+               )
+
+      assert %{
+               run: [
+                 {:module_action, Actions, {:mix_test, "test/elixir/language_test.exs:10"}}
+               ],
+               next: %{
+                 0 => %{
+                   run: [
+                     {:module_action, Actions,
+                      {:fix_all_with_file, "test/elixir/language_test.exs:10"}}
+                   ]
+                 },
+                 :fallback => %{run: [{:module_action, Actions, :run_single_again}]}
+               }
+             } = actions
+
+      flunk("pick up from here")
+    end
+  end
 
   describe "determine_actions/2 - default mode" do
     test "finds the equivalent test file" do
       server_state = ServerStateBuilder.build()
 
       assert {actions, _new_server_state} =
-               ElixirLang.determine_actions(
+               Language.determine_actions(
                  %{extension: @ex, file_path: "lib/very/cool.ex"},
                  server_state
                )
@@ -29,7 +67,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
                    run: [
                      {:run_sys_cmd, "tput", ["reset"]},
                      {:puts, "Running mix test test/very/cool_test.exs"},
-                     {:mix_test, "test/very/cool_test.exs"}
+                     {:module_action, Actions, {:mix_test, "test/very/cool_test.exs"}}
                    ]
                  }
                },
@@ -43,7 +81,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
       server_state = ServerStateBuilder.build()
 
       assert {_actions, ^server_state} =
-               ElixirLang.determine_actions(
+               Language.determine_actions(
                  %{extension: @ex, file_path: "lib/very/cool.ex"},
                  server_state
                )
@@ -53,7 +91,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
       server_state = ServerStateBuilder.build()
 
       assert {actions, _new_server_state} =
-               ElixirLang.determine_actions(
+               Language.determine_actions(
                  %{extension: @ex, file_path: "lib/very/cool.ex"},
                  server_state
                )
@@ -67,8 +105,8 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
       server_state = ServerStateBuilder.build()
 
       assert {actions, _new_server_state} =
-               ElixirLang.determine_actions(
-                 %{extension: @ex, file_path: "lib/languages/elixir.ex"},
+               Language.determine_actions(
+                 %{extension: @ex, file_path: "lib/elixir/language.ex"},
                  server_state
                )
 
@@ -81,8 +119,8 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
       server_state = ServerStateBuilder.build()
 
       assert {actions, _new_server_state} =
-               ElixirLang.determine_actions(
-                 %{extension: @exs, file_path: "test/languages/elixir_test.exs"},
+               Language.determine_actions(
+                 %{extension: @exs, file_path: "test/elixir/language_test.exs"},
                  server_state
                )
 
@@ -95,7 +133,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
       server_state = ServerStateBuilder.build()
 
       assert {actions, _new_server_state} =
-               ElixirLang.determine_actions(
+               Language.determine_actions(
                  %{extension: @exs, file_path: "test/nonsense/path/jank_test.exs"},
                  server_state
                )
@@ -114,7 +152,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
         |> ServerStateBuilder.with_elixir_failures(["test/languages/elixir_test.exs:103"])
 
       assert {actions, _new_server_state} =
-               ElixirLang.determine_actions(
+               Language.determine_actions(
                  %{extension: @exs, file_path: "test/nonsense/path/jank_test.exs"},
                  server_state
                )
@@ -122,7 +160,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
       assert [
                {:run_sys_cmd, "tput", ["reset"]},
                {:puts, "Running 'mix test test/languages/elixir_test.exs:103'"},
-               {:mix_test, "test/languages/elixir_test.exs:103"},
+               {:module_action, Actions, {:mix_test, "test/languages/elixir_test.exs:103"}},
                {:puts, "I've been told to ONLY run this one FIXED path btw!"},
                {:puts, "Retern to default mode by entering 'ex d'"}
              ] = actions
@@ -135,7 +173,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
         |> ServerStateBuilder.with_elixir_failures([])
 
       assert {actions, _new_server_state} =
-               ElixirLang.determine_actions(
+               Language.determine_actions(
                  %{extension: @exs, file_path: "test/nonsense/path/jank_test.exs"},
                  server_state
                )
@@ -151,7 +189,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
         |> ServerStateBuilder.with_elixir_fixed_file_mode("test/languages/elixir_test.exs:103")
 
       assert {actions, _new_server_state} =
-               ElixirLang.determine_actions(
+               Language.determine_actions(
                  %{extension: @exs, file_path: "test/nonsense/path/jank_test.exs"},
                  server_state
                )
@@ -159,7 +197,8 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
       assert [
                {:run_sys_cmd, "tput", ["reset"]},
                {:puts, "Running 'mix test test/languages/elixir_test.exs:103'"},
-               {:mix_test, "test/languages/elixir_test.exs:103"},
+               # {:mix_test, "test/languages/elixir_test.exs:103"},
+               {:module_action, Actions, {:mix_test, "test/languages/elixir_test.exs:103"}},
                {:puts, "I've been told to ONLY run this one FIXED path btw!"},
                {:puts, "Retern to default mode by entering 'ex d'"}
              ] = actions
@@ -186,7 +225,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
       Randomized with seed 846778
       """
 
-      result = ElixirLang.add_mix_test_history(server_state, test_output)
+      result = Language.add_mix_test_history(server_state, test_output)
       assert %{elixir: %{failures: ["test/languages/elixir_test.exs:154"]}} = result
     end
 
@@ -228,7 +267,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
                    "test/existing_test.exs:10"
                  ]
                }
-             } = ElixirLang.add_mix_test_history(server_state, test_output)
+             } = Language.add_mix_test_history(server_state, test_output)
     end
   end
 
@@ -254,7 +293,7 @@ defmodule PolyglotWatcher.Languages.ElixirTest do
       Randomized with seed 846778
       """
 
-      result = ElixirLang.reset_mix_test_history(server_state, test_output)
+      result = Language.reset_mix_test_history(server_state, test_output)
       assert %{elixir: %{failures: ["test/languages/elixir_test.exs:154"]}} = result
     end
   end

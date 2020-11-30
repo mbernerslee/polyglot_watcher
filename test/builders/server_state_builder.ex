@@ -11,6 +11,10 @@ defmodule PolyglotWatcher.ServerStateBuilder do
     put_in(server_state, [:elixir, :mode], {:fixed_file, file_path})
   end
 
+  def with_elixir_fix_all_mode(server_state, fix_all) do
+    put_in(server_state, [:elixir, :mode], {:fix_all, fix_all})
+  end
+
   def with_elixir_default_mode(server_state) do
     put_in(server_state, [:elixir, :mode], :default)
   end

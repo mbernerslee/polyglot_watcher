@@ -2,8 +2,37 @@ defmodule PolyglotWatcher.UserInputTest do
   use ExUnit.Case, async: true
   alias PolyglotWatcher.ServerStateBuilder
   alias PolyglotWatcher.UserInput
+  alias PolyglotWatcher.Elixir.Actions, as: ElixirActions
 
   # TODO move the elixir specific stuff to its own module. make an abstraction for language agnostic user input parsing
+
+  describe "determine_actions/2 - fix all mode" do
+    test "can change the server state to fix all mode" do
+      server_state = ServerStateBuilder.build()
+
+      assert {actions, server_state} = UserInput.determine_actions("ex fa\n", server_state)
+      assert %{elixir: %{mode: {:fix_all, :run_single}}} = server_state
+
+      assert [
+               {:puts, "Switching to fix all mode"},
+               {:puts, "It'll run: "},
+               {:puts, "1) 'mix test' to see how bad it is.."},
+               {:puts,
+                "2) 'mix test /path/to/specific/failure_test.exs:23' ... some arbirarily chosen broken test...until it pases"},
+               {:puts,
+                "3) 'mix test /path/to/specific/failure_test.exs' ... to see if there're still some broken tests. if yes goto 2)"},
+               {:puts,
+                "4) 'mix test --failed' ... to see if there're still some broken tests. if yes goto 2)"},
+               {:puts,
+                "5) 'mix test --failed --max-failures 1' ... to find the next failing test. if there is one goto 2)"},
+               {:puts,
+                "6) 'mix test' ... if this passes we're good! (otherwise go back to 2), *waw waw*)"},
+               mix_test
+             ] = actions
+
+      assert mix_test == ElixirActions.mix_test()
+    end
+  end
 
   describe "determine_actions/2" do
     test "shows the usage instructions given jank" do
@@ -31,7 +60,7 @@ defmodule PolyglotWatcher.UserInputTest do
         {:puts, first_echo},
         {:puts, second_echo},
         {:puts, third_echo},
-        {:mix_test, "test/path_test.exs:10"}
+        {:module_action, _, {:mix_test, "test/path_test.exs:10"}}
       ] = actions
 
       assert first_echo =~ "Switching to fixed mode"
@@ -73,8 +102,10 @@ defmodule PolyglotWatcher.UserInputTest do
         {:puts, first_echo},
         {:puts, second_echo},
         {:puts, third_echo},
-        {:mix_test, "test/example_test.exs:9"}
+        mix_test
       ] = actions
+
+      assert ElixirActions.mix_test("test/example_test.exs:9") == mix_test
 
       assert first_echo =~ "Switching to fixed file mode"
 
@@ -120,7 +151,7 @@ defmodule PolyglotWatcher.UserInputTest do
 
       assert {actions, new_server_state} = UserInput.determine_actions("ex a\n", server_state)
 
-      [{:puts, echo}, :mix_test] = actions
+      [{:puts, echo}, {:module_action, _, :mix_test}] = actions
 
       assert echo =~ "Running 'mix test'"
 

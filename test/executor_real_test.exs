@@ -6,6 +6,7 @@ defmodule PolyglotWatcher.Executor.RealTest do
 
   alias PolyglotWatcher.Executor.Real
   alias PolyglotWatcher.ServerStateBuilder
+  alias PolyglotWatcher.Elixir.Actions, as: ElixirActions
 
   describe "run_actions/2 - can run different actions" do
     test "can run given elixir functions" do
@@ -26,12 +27,16 @@ defmodule PolyglotWatcher.Executor.RealTest do
              end) =~ "hello dave"
     end
 
+    # TODO move this test elswhere, and add a more general "can run a module action" test
     test "can run mix test" do
       server_state = ServerStateBuilder.build()
 
       mix_test_output =
         capture_io(fn ->
-          Real.run_actions({[{:mix_test, "test/example_test.exs"}], server_state})
+          Real.run_actions(
+            {[{:module_action, ElixirActions, {:mix_test, "test/example_test.exs"}}],
+             server_state}
+          )
         end)
 
       assert mix_test_output =~ "0 failures"

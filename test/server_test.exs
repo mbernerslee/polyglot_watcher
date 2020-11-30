@@ -44,5 +44,12 @@ defmodule PolyglotWatcher.ServerTest do
       assert {:noreply, server_state} ==
                Server.handle_call({:user_input, "some jank"}, :from, server_state)
     end
+
+    test "can put it into fix all mode" do
+      server_state = ServerStateBuilder.build()
+
+      assert {:noreply, %{elixir: %{mode: {:fix_all, :mix_test}}}} =
+               Server.handle_call({:user_input, "ex fa\n"}, :from, server_state)
+    end
   end
 end

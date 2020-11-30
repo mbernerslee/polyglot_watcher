@@ -1,5 +1,6 @@
-defmodule PolyglotWatcher.Languages.Elixir do
+defmodule PolyglotWatcher.Elixir.Language do
   alias PolyglotWatcher.Languages.Language
+  alias PolyglotWatcher.Elixir.Actions
   @behaviour Language
 
   @ex ".ex"
@@ -23,8 +24,27 @@ defmodule PolyglotWatcher.Languages.Elixir do
       {:fixed_file, test_path} ->
         fixed_path(test_path, server_state)
 
+      {:fix_all, :run_single} ->
+        run_single(server_state)
+
       _ ->
         default_mode(file, server_state)
+    end
+  end
+
+  defp run_single(server_state) do
+    case server_state.elixir.failures do
+      [] ->
+        {[], set_mode(server_state, {:fix_all, :mix_test})}
+
+      [fail | _rest] ->
+        {%{
+           run: [Actions.mix_test(fail)],
+           next: %{
+             0 => %{run: [Actions.fix_all_with_file(fail)]},
+             :fallback => %{run: [Actions.run_single_again()]}
+           }
+         }, server_state}
     end
   end
 
@@ -45,7 +65,7 @@ defmodule PolyglotWatcher.Languages.Elixir do
     {[
        {:run_sys_cmd, "tput", ["reset"]},
        {:puts, "Running 'mix test #{test_path}'"},
-       {:mix_test, test_path},
+       Actions.mix_test(test_path),
        {:puts, "I've been told to ONLY run this one FIXED path btw!"},
        {:puts, "Retern to default mode by entering 'ex d'"}
      ], server_state}
@@ -82,6 +102,7 @@ defmodule PolyglotWatcher.Languages.Elixir do
     end
   end
 
+  # TODO test coverage is missing here
   defp default_mode(test_path) do
     %{
       run: [{:run_elixir_fn, fn -> File.exists?(test_path) end}],
@@ -90,7 +111,7 @@ defmodule PolyglotWatcher.Languages.Elixir do
           run: [
             {:run_sys_cmd, "tput", ["reset"]},
             {:puts, "Running mix test #{test_path}"},
-            {:mix_test, test_path}
+            Actions.mix_test(test_path)
           ]
         },
         false => %{
@@ -118,5 +139,9 @@ defmodule PolyglotWatcher.Languages.Elixir do
       {:fixed_previous, []} -> :default
       {other, _} -> other
     end
+  end
+
+  def set_mode(server_state, mode) do
+    put_in(server_state, [:elixir, :mode], mode)
   end
 end

@@ -17,7 +17,7 @@ defmodule PolyglotWatcher.LanguagesTest do
   use ExUnit.Case, async: true
   alias PolyglotWatcher.Languages
   alias PolyglotWatcher.Languages.ExampleLanguageModule
-  alias PolyglotWatcher.Languages.Elixir, as: ElixirLang
+  alias PolyglotWatcher.Elixir.Language, as: ElixirLang
 
   describe "determine_actions/1" do
     test "given noop, returns empty list of actions" do

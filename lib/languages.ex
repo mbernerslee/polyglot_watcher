@@ -1,5 +1,5 @@
 defmodule PolyglotWatcher.Languages do
-  alias PolyglotWatcher.Languages.Elixir, as: ElixirLang
+  alias PolyglotWatcher.Elixir.Language, as: ElixirLang
 
   @all [ElixirLang]
 
