@@ -1,6 +1,5 @@
 defmodule PolyglotWatcher.Elixir.UserInput do
-  alias PolyglotWatcher.Elixir.Actions
-  alias PolyglotWatcher.Elixir.Language
+  alias PolyglotWatcher.Elixir.{Actions, Language, FixAllMode}
   # TODO make this use a behavior
   @prefix "ex"
 
@@ -26,7 +25,7 @@ defmodule PolyglotWatcher.Elixir.UserInput do
         {:ok, mix_test(server_state)}
 
       "fa" ->
-        {:ok, fix_all_mode(server_state)}
+        {:ok, FixAllMode.enter(server_state)}
 
       _ ->
         :error
@@ -58,24 +57,5 @@ defmodule PolyglotWatcher.Elixir.UserInput do
 
   defp mix_test(server_state) do
     {[{:puts, "Running 'mix test'"}, Actions.mix_test()], server_state}
-  end
-
-  defp fix_all_mode(server_state) do
-    {[
-       {:puts, "Switching to fix all mode"},
-       {:puts, "It'll run: "},
-       {:puts, "1) 'mix test' to see how bad it is.."},
-       {:puts,
-        "2) 'mix test /path/to/specific/failure_test.exs:23' ... some arbirarily chosen broken test...until it pases"},
-       {:puts,
-        "3) 'mix test /path/to/specific/failure_test.exs' ... to see if there're still some broken tests. if yes goto 2)"},
-       {:puts,
-        "4) 'mix test --failed' ... to see if there're still some broken tests. if yes goto 2)"},
-       {:puts,
-        "5) 'mix test --failed --max-failures 1' ... to find the next failing test. if there is one goto 2)"},
-       {:puts,
-        "6) 'mix test' ... if this passes we're good! (otherwise go back to 2), *waw waw*)"},
-       Actions.mix_test()
-     ], Language.set_mode(server_state, {:fix_all, :run_single})}
   end
 end

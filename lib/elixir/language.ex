@@ -24,7 +24,8 @@ defmodule PolyglotWatcher.Elixir.Language do
       {:fixed_file, test_path} ->
         fixed_path(test_path, server_state)
 
-      {:fix_all, :run_single} ->
+      # {:fix_all, :run_single} ->
+      {:fix_all, _} ->
         run_single(server_state)
 
       _ ->
@@ -33,34 +34,31 @@ defmodule PolyglotWatcher.Elixir.Language do
   end
 
   defp run_single(server_state) do
-    case server_state.elixir.failures do
-      [] ->
-        {[], set_mode(server_state, {:fix_all, :mix_test})}
+    {[{:puts, "TODO: something in this state!"}], server_state}
+    # case server_state.elixir.failures do
+    #  [] ->
+    #    {[], set_mode(server_state, {:fix_all, :mix_test})}
 
-      [fail | _rest] ->
-        file = trim_line_number(fail)
+    #  [fail | _rest] ->
+    #    file = trim_line_number(fail)
 
-        # TODO move all this to happen on initial run
-        {%{
-           run: [Actions.mix_test(fail)],
-           next: %{
-             0 => %{
-               run: [Actions.mix_test(file)],
-               # TODO make the executor actually run this function
-               update_server_state: fn server_state ->
-                 set_mode(server_state, {:fix_all, :file, file})
-               end
-             },
-             :fallback => %{
-               run: [Actions.mix_test(fail)]
-             }
-           }
-         }, server_state}
-    end
-  end
-
-  defp trim_line_number(file) do
-    file |> String.split(":") |> hd()
+    #    # TODO move all this to happen on initial run
+    #    {%{
+    #       run: [Actions.mix_test(fail)],
+    #       next: %{
+    #         0 => %{
+    #           run: [Actions.mix_test(file)],
+    #           # TODO make the executor actually run this function
+    #           update_server_state: fn server_state ->
+    #             set_mode(server_state, {:fix_all, :file, file})
+    #           end
+    #         },
+    #         :fallback => %{
+    #           run: [Actions.mix_test(fail)]
+    #         }
+    #       }
+    #     }, server_state}
+    # end
   end
 
   def reset_mix_test_history(server_state, mix_test_output) do
@@ -73,6 +71,7 @@ defmodule PolyglotWatcher.Elixir.Language do
     mix_test_output = String.split(mix_test_output, "\n")
     failures = accumulate_failing_tests([], nil, mix_test_output)
 
+    # TODO theire a bug here where we'd add dupicate test failures. fix it!
     update_in(server_state, [:elixir, :failures], fn old -> failures ++ old end)
   end
 

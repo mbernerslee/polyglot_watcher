@@ -29,20 +29,47 @@ defmodule PolyglotWatcher.Executor.Real do
   defp run_actions_tree({_last_action_result, server_state}, nil), do: server_state
 
   defp run_actions_tree({prev_action_result, server_state}, next) do
-    IO.inspect(prev_action_result, label: "prev_action_result")
-    IO.inspect(server_state, label: "server_state")
-    IO.inspect(next, label: "next")
-
     actions = next[prev_action_result] || next[:fallback]
 
-    server_state_fun = next[:update_server_state] || fn x -> x end
+    server_state = update_server_state(next, server_state)
 
-    server_state = server_state_fun.(server_state)
+    case actions do
+      %{loop_entry_point: loop_entry_point, actions: actions} ->
+        loop_through_actions(actions, loop_entry_point, server_state)
 
-    {actions_result, server_state} = run_series_of_actions({actions[:run] || [], server_state})
+      %{run: _} ->
+        {actions_result, server_state} =
+          run_series_of_actions({actions[:run] || [], server_state})
 
-    run_actions_tree({actions_result, server_state}, actions[:next])
+        run_actions_tree({actions_result, server_state}, actions[:next])
+    end
   end
+
+  defp loop_through_actions(all_actions, action_key, server_state) do
+    action = all_actions[action_key]
+    server_state = update_server_state(action, server_state)
+
+    {series_result, server_state} = run_series_of_actions({action.run, server_state})
+
+    case action.next[series_result] || action.next[:fallback] do
+      %{run: to_run, continue: next_action} ->
+        {series_result, server_state} = run_series_of_actions({to_run, server_state})
+        loop_through_actions(all_actions, next_action, server_state)
+
+      :exit ->
+        {series_result, server_state}
+    end
+  end
+
+  defp update_server_state(%{update_server_state: updater}, server_state) do
+    updater.(server_state)
+  end
+
+  defp update_server_state(_, server_state) do
+    server_state
+  end
+
+  defp run_series_of_actions({nil, server_state}), do: {nil, server_state}
 
   defp run_series_of_actions({actions, server_state}) do
     Enum.reduce(actions, {nil, server_state}, fn action, {_prev_result, server_state} ->
