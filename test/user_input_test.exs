@@ -2,7 +2,7 @@ defmodule PolyglotWatcher.UserInputTest do
   use ExUnit.Case, async: true
   alias PolyglotWatcher.ServerStateBuilder
   alias PolyglotWatcher.UserInput
-  alias PolyglotWatcher.Elixir.Actions, as: ElixirActions
+  alias PolyglotWatcher.Elixir.Actions
 
   # TODO move the elixir specific stuff to its own module. make an abstraction for language agnostic user input parsing
 
@@ -11,26 +11,30 @@ defmodule PolyglotWatcher.UserInputTest do
       server_state = ServerStateBuilder.build()
 
       assert {actions, server_state} = UserInput.determine_actions("ex fa\n", server_state)
-      assert %{elixir: %{mode: {:fix_all, :run_single}}} = server_state
+      assert %{elixir: %{mode: {:fix_all, :mix_test}}} = server_state
 
-      assert [
-               {:puts, "Switching to fix all mode"},
-               {:puts, "It'll run: "},
-               {:puts, "1) 'mix test' to see how bad it is.."},
-               {:puts,
-                "2) 'mix test /path/to/specific/failure_test.exs:23' ... some arbirarily chosen broken test...until it pases"},
-               {:puts,
-                "3) 'mix test /path/to/specific/failure_test.exs' ... to see if there're still some broken tests. if yes goto 2)"},
-               {:puts,
-                "4) 'mix test --failed' ... to see if there're still some broken tests. if yes goto 2)"},
-               {:puts,
-                "5) 'mix test --failed --max-failures 1' ... to find the next failing test. if there is one goto 2)"},
-               {:puts,
-                "6) 'mix test' ... if this passes we're good! (otherwise go back to 2), *waw waw*)"},
-               mix_test
-             ] = actions
-
-      assert mix_test == ElixirActions.mix_test()
+      assert %{
+               run: [
+                 {:puts, "Switching to fix all mode"},
+                 {:puts, "It'll run: "},
+                 {:puts, "1) 'mix test' to see how bad it is.."},
+                 {:puts,
+                  "2) 'mix test /path/to/specific/failure_test.exs:23' ... some arbirarily chosen broken test...until it pases"},
+                 {:puts,
+                  "3) 'mix test /path/to/specific/failure_test.exs' ... to see if there're still some broken tests. if yes goto 2)"},
+                 {:puts,
+                  "4) 'mix test --failed' ... to see if there're still some broken tests. if yes goto 2)"},
+                 {:puts,
+                  "5) 'mix test --failed --max-failures 1' ... to find the next failing test. if there is one goto 2)"},
+                 {:puts,
+                  "6) 'mix test' ... if this passes we're good! (otherwise go back to 2), *waw waw*)"}
+               ],
+               next: %{
+                 fallback: %{
+                   loop_entry_point: :mix_test
+                 }
+               }
+             } = actions
     end
   end
 
@@ -105,7 +109,7 @@ defmodule PolyglotWatcher.UserInputTest do
         mix_test
       ] = actions
 
-      assert ElixirActions.mix_test("test/example_test.exs:9") == mix_test
+      assert Actions.mix_test("test/example_test.exs:9") == mix_test
 
       assert first_echo =~ "Switching to fixed file mode"
 

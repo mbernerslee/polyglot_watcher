@@ -19,13 +19,14 @@ defmodule PolyglotWatcher.Server do
 
   # TODO add a test for let's go
   @impl true
-  def init(_) do
+  def init(x) do
     listen_for_user_input()
     {:ok, watcher_pid} = FileSystem.start_link(dirs: ["."])
 
     FileSystem.subscribe(watcher_pid)
 
     Puts.put("Let's go...")
+
     {:ok, %{watcher_pid: watcher_pid, elixir: %{mode: :default, failures: []}}}
   end
 

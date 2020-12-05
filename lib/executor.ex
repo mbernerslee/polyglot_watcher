@@ -33,16 +33,16 @@ defmodule PolyglotWatcher.Executor.Real do
 
     server_state = update_server_state(next, server_state)
 
-    case actions do
-      %{loop_entry_point: loop_entry_point, actions: actions} ->
-        loop_through_actions(actions, loop_entry_point, server_state)
+    {actions_result, server_state} =
+      case actions do
+        %{loop_entry_point: loop_entry_point, actions: actions} ->
+          loop_through_actions(actions, loop_entry_point, server_state)
 
-      %{run: _} ->
-        {actions_result, server_state} =
+        %{run: _} ->
           run_series_of_actions({actions[:run] || [], server_state})
+      end
 
-        run_actions_tree({actions_result, server_state}, actions[:next])
-    end
+    run_actions_tree({actions_result, server_state}, actions[:next])
   end
 
   defp loop_through_actions(all_actions, action_key, server_state) do
@@ -51,10 +51,17 @@ defmodule PolyglotWatcher.Executor.Real do
 
     {series_result, server_state} = run_series_of_actions({action.run, server_state})
 
-    case action.next[series_result] || action.next[:fallback] do
+    next_action = action.next[series_result] || action.next[:fallback]
+
+    server_state = update_server_state(next_action, server_state)
+
+    case next_action do
       %{run: to_run, continue: next_action} ->
-        {series_result, server_state} = run_series_of_actions({to_run, server_state})
+        {_series_result, server_state} = run_series_of_actions({to_run, server_state})
         loop_through_actions(all_actions, next_action, server_state)
+
+      %{run: to_run} ->
+        run_series_of_actions({to_run, server_state})
 
       :exit ->
         {series_result, server_state}

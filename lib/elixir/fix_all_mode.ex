@@ -19,27 +19,24 @@ defmodule PolyglotWatcher.Elixir.FixAllMode do
   @mix_test_pass_exit_code 0
 
   def enter(server_state) do
-    server_state = Language.set_mode(server_state, {:fix_all, :mix_test_all})
+    server_state = Language.set_mode(server_state, {:fix_all, :mix_test})
 
     {
       %{
-        run: explain_and_mix_test(),
-        next: %{
-          @mix_test_pass_exit_code => all_fixed(),
-          :fallback => loop()
-        }
+        run: @explanation,
+        next: %{:fallback => loop(:mix_test)}
       },
       server_state
     }
   end
 
-  defp explain_and_mix_test do
-    @explanation ++ [Actions.mix_test()]
+  def actions(server_state, entry_point) do
+    {%{run: [], next: %{:fallback => loop(entry_point)}}, server_state}
   end
 
-  defp loop do
+  defp loop(entry_point \\ :single_test) do
     %{
-      loop_entry_point: :single_test,
+      loop_entry_point: entry_point,
       actions: %{
         single_test: %{
           update_server_state: &Language.set_mode(&1, {:fix_all, :single_test}),
@@ -55,55 +52,40 @@ defmodule PolyglotWatcher.Elixir.FixAllMode do
               continue: :single_file
             },
             :fallback => :exit
-          },
-          single_file: %{
-            update_server_state: &Language.set_mode(&1, {:fix_all, :single_file}),
-            run: [
-              {:puts, "Checking if there're any other test failures in that file..."},
-              Actions.mix_test_head_file()
-            ],
-            next: %{
-              @mix_test_pass_exit_code => %{
-                run: [
-                  {:puts, "Fixed all tests in that file!!"}
-                ],
-                continue: :mix_test
-              },
-              :fallback => :exit
-            }
-          },
-          mix_test: %{
-            update_server_state: &Language.set_mode(&1, {:fix_all, :mix_test}),
-            run: [
-              {:puts, "Running all tests to find more failures..."},
-              Actions.mix_test()
-            ],
-            next: %{
-              @mix_test_pass_exit_code => all_fixed(),
-              :fallback => :exit
+          }
+        },
+        single_file: %{
+          update_server_state: &Language.set_mode(&1, {:fix_all, :single_file}),
+          run: [
+            {:puts, "Checking if there're any other test failures in that file..."},
+            Actions.mix_test_head_file()
+          ],
+          next: %{
+            @mix_test_pass_exit_code => %{
+              run: [
+                {:puts, "Fixed all tests in that file!!"}
+              ],
+              continue: :mix_test
+            },
+            :fallback => :exit
+          }
+        },
+        mix_test: %{
+          update_server_state: &Language.set_mode(&1, {:fix_all, :mix_test}),
+          run: [
+            {:puts, "Running all tests..."},
+            Actions.mix_test()
+          ],
+          next: %{
+            @mix_test_pass_exit_code => all_fixed(),
+            :fallback => %{
+              run: [],
+              continue: :single_test
             }
           }
         }
       }
     }
-
-    # %{
-    #  run: [
-    #    {:puts, "looks like you've fucked it mate"},
-    #    Actions.mix_test_head_single()
-    #  ],
-    #  next: %{
-    #    @mix_test_pass_exit_code => %{
-    #      run: [
-    #        {:puts, "Nice, you fixed that one, finding the next broken test in that file..."},
-    #        Actions.mix_test_head_file()
-    #      ]
-    #      next: %{
-    #        @mix_test_pass_exit_code => %{
-    #      }
-    #    }
-    #  }
-    # }
   end
 
   defp all_fixed do

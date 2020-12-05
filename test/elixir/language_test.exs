@@ -17,7 +17,7 @@ defmodule PolyglotWatcher.Elixir.LanguageTest do
       server_state =
         ServerStateBuilder.build()
         |> ServerStateBuilder.with_elixir_failures(failures)
-        |> ServerStateBuilder.with_elixir_fix_all_mode(:run_single)
+        |> ServerStateBuilder.with_elixir_fix_all_mode(:single_test)
 
       assert {actions, _new_server_state} =
                Language.determine_actions(
@@ -26,21 +26,11 @@ defmodule PolyglotWatcher.Elixir.LanguageTest do
                )
 
       assert %{
-               run: [
-                 {:module_action, Actions, {:mix_test, "test/elixir/language_test.exs:10"}}
-               ],
+               run: [],
                next: %{
-                 0 => %{
-                   run: [
-                     {:module_action, Actions,
-                      {:fix_all_with_file, "test/elixir/language_test.exs:10"}}
-                   ]
-                 },
-                 :fallback => %{run: [{:module_action, Actions, :run_single_again}]}
+                 :fallback => %{loop_entry_point: :single_test}
                }
              } = actions
-
-      flunk("pick up from here")
     end
   end
 
@@ -268,6 +258,31 @@ defmodule PolyglotWatcher.Elixir.LanguageTest do
                  ]
                }
              } = Language.add_mix_test_history(server_state, test_output)
+    end
+
+    test "doesn't add duplicate failures" do
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_elixir_failures(["test/languages/elixir_test.exs:154"])
+
+      test_output = """
+        1) test add_mix_test_history/2 adds failing tests to the failures (PolyglotWatcher.Languages.ElixirTest)
+           test/languages/elixir_test.exs:154
+           Flunked!
+           code: flunk()
+           stacktrace:
+            test/languages/elixir_test.exs:157: (test)
+
+      ........
+
+      Finished in 0.1 seconds
+      9 tests, 1 failure
+
+      Randomized with seed 846778
+      """
+
+      result = Language.add_mix_test_history(server_state, test_output)
+      assert %{elixir: %{failures: ["test/languages/elixir_test.exs:154"]}} = result
     end
   end
 
