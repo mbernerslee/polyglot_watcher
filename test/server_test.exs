@@ -16,7 +16,6 @@ defmodule PolyglotWatcher.ServerTest do
   describe "child_spec/0" do
     test "returns the default genserver options" do
       assert Server.child_spec() == %{id: Server, start: {Server, :start_link, [[name: :server]]}}
-      # flunk("oopsy")
     end
   end
 

@@ -56,7 +56,7 @@ defmodule PolyglotWatcher.Server do
   end
 
   defp listen_for_user_input do
-    unless Mix.env() == :test do
+    if should_listen_for_user_input?() do
       pid = self()
 
       spawn_link(fn ->
@@ -64,5 +64,9 @@ defmodule PolyglotWatcher.Server do
         GenServer.call(pid, {:user_input, user_input}, :infinity)
       end)
     end
+  end
+
+  defp should_listen_for_user_input? do
+    Application.get_env(:polyglot_watcher, :listen_for_user_input, true)
   end
 end

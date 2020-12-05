@@ -10,7 +10,7 @@ defmodule PolyglotWatcher.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       releases: [
-        prod: [
+        cool_name: [
           include_executables_for: [:unix],
           applications: [runtime_tools: :permanent]
         ]
