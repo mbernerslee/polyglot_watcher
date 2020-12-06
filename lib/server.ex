@@ -26,17 +26,31 @@ defmodule PolyglotWatcher.Server do
 
     Puts.put("Ready to go...")
 
-    {:ok, %{watcher_pid: watcher_pid, elixir: %{mode: :default, failures: []}}}
+    {:ok,
+     %{
+       watcher_pid: watcher_pid,
+       ignore_file_changes: false,
+       elixir: %{mode: :default, failures: []}
+     }}
   end
 
   @impl true
   def handle_info({:file_event, _pid, {file_path, [:modified, :closed]}}, state) do
-    file_path
-    |> FileSystemChange.determine_language_module(state)
-    |> Languages.determine_actions()
-    |> Executor.run_actions()
+    # TODO add tests for the ignore something behavior
+    if state.ignore_file_changes do
+      {:noreply, state}
+    else
+      set_ignore_file_changes(true)
 
-    {:noreply, state}
+      # TODO add a test that would file if state is not rebound
+      state =
+        file_path
+        |> FileSystemChange.determine_language_module(state)
+        |> Languages.determine_actions()
+        |> Executor.run_actions()
+
+      {:noreply, %{state | ignore_file_changes: false}}
+    end
   end
 
   def handle_info({:file_event, _pid, _}, state) do
@@ -52,6 +66,16 @@ defmodule PolyglotWatcher.Server do
 
     listen_for_user_input()
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:ignore_file_changes, bool}, state) do
+    {:noreply, %{state | ignore_file_changes: bool}}
+  end
+
+  defp set_ignore_file_changes(true_or_false) do
+    pid = self()
+    spawn_link(fn -> GenServer.cast(pid, {:ignore_file_changes, true_or_false}) end)
   end
 
   defp listen_for_user_input do
