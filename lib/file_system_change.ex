@@ -23,8 +23,11 @@ defmodule PolyglotWatcher.FileSystemChange do
 
   defp determine_language_module_actions({:ok, file_path}, server_state) do
     case Map.get(@extensions_to_modules, file_path.extension) do
-      nil -> {:noop, server_state}
-      module -> {module, file_path, server_state}
+      nil ->
+        {:noop, server_state}
+
+      module ->
+        {module, file_path, server_state}
     end
   end
 end

@@ -23,11 +23,7 @@ defmodule PolyglotWatcher.UserInputTest do
                  {:puts,
                   "3) 'mix test /path/to/specific/failure_test.exs' ... to see if there're still some broken tests. if yes goto 2)"},
                  {:puts,
-                  "4) 'mix test --failed' ... to see if there're still some broken tests. if yes goto 2)"},
-                 {:puts,
-                  "5) 'mix test --failed --max-failures 1' ... to find the next failing test. if there is one goto 2)"},
-                 {:puts,
-                  "6) 'mix test' ... if this passes we're good! (otherwise go back to 2), *waw waw*)"}
+                  "4) 'mix test' ... if this passes we're good! (otherwise go back to 2), *waw waw*)"}
                ],
                next: %{
                  fallback: %{

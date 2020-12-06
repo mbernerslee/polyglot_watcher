@@ -187,7 +187,6 @@ defmodule PolyglotWatcher.Elixir.LanguageTest do
       assert [
                {:run_sys_cmd, "tput", ["reset"]},
                {:puts, "Running 'mix test test/languages/elixir_test.exs:103'"},
-               # {:mix_test, "test/languages/elixir_test.exs:103"},
                {:module_action, Actions, {:mix_test, "test/languages/elixir_test.exs:103"}},
                {:puts, "I've been told to ONLY run this one FIXED path btw!"},
                {:puts, "Retern to default mode by entering 'ex d'"}

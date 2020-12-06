@@ -9,14 +9,12 @@ defmodule PolyglotWatcher.Elixir.FixAllMode do
      "2) 'mix test /path/to/specific/failure_test.exs:23' ... some arbirarily chosen broken test...until it pases"},
     {:puts,
      "3) 'mix test /path/to/specific/failure_test.exs' ... to see if there're still some broken tests. if yes goto 2)"},
-    {:puts,
-     "4) 'mix test --failed' ... to see if there're still some broken tests. if yes goto 2)"},
-    {:puts,
-     "5) 'mix test --failed --max-failures 1' ... to find the next failing test. if there is one goto 2)"},
-    {:puts, "6) 'mix test' ... if this passes we're good! (otherwise go back to 2), *waw waw*)"}
+    {:puts, "4) 'mix test' ... if this passes we're good! (otherwise go back to 2), *waw waw*)"}
   ]
 
   @mix_test_pass_exit_code 0
+
+  @entry_points [:single_test, :single_file, :mix_test]
 
   def enter(server_state) do
     server_state = Language.set_mode(server_state, {:fix_all, :mix_test})
@@ -30,11 +28,15 @@ defmodule PolyglotWatcher.Elixir.FixAllMode do
     }
   end
 
-  def actions(server_state, entry_point) do
+  def actions(server_state, entry_point) when entry_point in @entry_points do
     {%{run: [], next: %{:fallback => loop(entry_point)}}, server_state}
   end
 
-  defp loop(entry_point \\ :single_test) do
+  def actions(_server_state, entry_point) do
+    raise "Unrecognised entry_point '#{entry_point}'"
+  end
+
+  defp loop(entry_point) do
     %{
       loop_entry_point: entry_point,
       actions: %{

@@ -17,15 +17,14 @@ defmodule PolyglotWatcher.Server do
     GenServer.start_link(__MODULE__, [], genserver_options)
   end
 
-  # TODO add a test for let's go
   @impl true
-  def init(x) do
+  def init(_) do
     listen_for_user_input()
     {:ok, watcher_pid} = FileSystem.start_link(dirs: ["."])
 
     FileSystem.subscribe(watcher_pid)
 
-    Puts.put("Let's go...")
+    Puts.put("Ready to go...")
 
     {:ok, %{watcher_pid: watcher_pid, elixir: %{mode: :default, failures: []}}}
   end

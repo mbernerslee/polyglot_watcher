@@ -1,5 +1,6 @@
 defmodule PolyglotWatcher.ServerTest do
   use ExUnit.Case, async: true
+  import ExUnit.CaptureIO
   alias PolyglotWatcher.{Server, ServerStateBuilder}
 
   describe "start_link/1" do
@@ -11,6 +12,10 @@ defmodule PolyglotWatcher.ServerTest do
       assert is_pid(watcher_pid)
       assert %{failures: [], mode: :default} == elixir
     end
+
+    test "puts message on startup" do
+      assert capture_io(fn -> Server.start_link([]) end) =~ "Ready to go..."
+    end
   end
 
   describe "child_spec/0" do
@@ -19,8 +24,8 @@ defmodule PolyglotWatcher.ServerTest do
     end
   end
 
-  describe "handle_info/2 - inotifywait" do
-    test "given some unrecognised jank, does nothing" do
+  describe "handle_info/2 - file_event" do
+    test "regonises file events from FileSystem" do
       server_state =
         ServerStateBuilder.build()
         |> ServerStateBuilder.with_elixir_failures(["test/path/cool_test.exs:2"])
@@ -50,6 +55,39 @@ defmodule PolyglotWatcher.ServerTest do
 
       assert {:noreply, %{elixir: %{mode: {:fix_all, :mix_test}}}} =
                Server.handle_call({:user_input, "ex fa\n"}, :from, server_state)
+    end
+
+    test "can put it into fix previous mode" do
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_elixir_failures(["test/path/cool_test.exs:2"])
+
+      assert {:noreply, %{elixir: %{mode: :fixed_previous}}} =
+               Server.handle_call({:user_input, "ex f\n"}, :from, server_state)
+    end
+
+    test "cannot switch to fix previous mode if no failures" do
+      server_state = ServerStateBuilder.build()
+
+      assert {:noreply, %{elixir: %{mode: :default}}} =
+               Server.handle_call({:user_input, "ex f\n"}, :from, server_state)
+    end
+
+    test "mix test doesn't change the server state" do
+      server_state = ServerStateBuilder.build()
+
+      assert {:noreply, %{elixir: %{mode: :default}}} =
+               Server.handle_call({:user_input, "ex a\n"}, :from, server_state)
+    end
+
+    test "can switch back to default mode" do
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_elixir_failures(["test/path/cool_test.exs:2"])
+        |> ServerStateBuilder.with_elixir_fixed_previous_mode()
+
+      assert {:noreply, %{elixir: %{mode: :default}}} =
+               Server.handle_call({:user_input, "ex d\n"}, :from, server_state)
     end
   end
 end
