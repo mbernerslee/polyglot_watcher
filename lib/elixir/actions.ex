@@ -4,6 +4,8 @@ defmodule PolyglotWatcher.Elixir.Actions do
 
   # TODO collapse this module into Elixir.Language?
 
+  @success_exit_code 0
+
   def mix_test do
     {:module_action, __MODULE__, :mix_test}
   end
@@ -36,6 +38,18 @@ defmodule PolyglotWatcher.Elixir.Actions do
     spin()
   end
 
+  defp put_summary({:ok, summary}, @success_exit_code) do
+    Puts.put(summary, :green)
+  end
+
+  defp put_summary({:ok, summary}, _) do
+    Puts.put(summary, :red)
+  end
+
+  defp put_summary({:error, error}, _) do
+    IO.puts(error)
+  end
+
   # TODO add spinner tests somehow?
   # TODO abstract away the spinner stuff into a function that recieves a do block "do while spinning" or "spin while"
   def run_action(:mix_test_quietly, server_state) do
@@ -43,13 +57,10 @@ defmodule PolyglotWatcher.Elixir.Actions do
     {mix_test_output, exit_code} = System.cmd("mix", ["test", "--color"])
     Process.exit(spinner_pid, :kill)
     IO.puts("")
-    summary = Language.mix_test_summary(mix_test_output)
 
-    if exit_code == 0 do
-      Puts.put(summary, :green)
-    else
-      Puts.put(summary, :red)
-    end
+    mix_test_output
+    |> Language.mix_test_summary()
+    |> put_summary(exit_code)
 
     # TODO add a test that would fail if this was add instead of reset!
     {exit_code, Language.reset_mix_test_history(server_state, mix_test_output)}
@@ -70,7 +81,13 @@ defmodule PolyglotWatcher.Elixir.Actions do
   def run_action(:mix_test_head_single, server_state) do
     case server_state.elixir.failures do
       [] ->
-        raise "i expected there to be at least one failing test in my memory, but there were none"
+        # TODO deal with this better
+        Puts.put(
+          "i expected there to be at least one failing test in my memory, but there were none",
+          :red
+        )
+
+        {1, Language.set_mode(server_state, {:fix_all, :mix_test})}
 
       [failure | _rest] ->
         run_action({:mix_test, failure}, server_state)
@@ -81,7 +98,12 @@ defmodule PolyglotWatcher.Elixir.Actions do
   def run_action(:mix_test_head_file_quietly, server_state) do
     case server_state.elixir.failures do
       [] ->
-        raise "i expected there to be at least one failing test in my memory, but there were none"
+        Puts.put(
+          "i expected there to be at least one failing test in my memory, but there were none",
+          :red
+        )
+
+        {1, Language.set_mode(server_state, {:fix_all, :mix_test})}
 
       [failure | _rest] ->
         file = trim_line_number(failure)
@@ -89,13 +111,10 @@ defmodule PolyglotWatcher.Elixir.Actions do
         {mix_test_output, exit_code} = System.cmd("mix", ["test", file, "--color"])
         Process.exit(spinner_pid, :kill)
         IO.puts("")
-        summary = Language.mix_test_summary(mix_test_output)
 
-        if exit_code == 0 do
-          Puts.put(summary, :green)
-        else
-          Puts.put(summary, :red)
-        end
+        mix_test_output
+        |> Language.mix_test_summary()
+        |> put_summary(exit_code)
 
         server_state =
           Language.update_mix_test_history_for_file(server_state, file, mix_test_output)

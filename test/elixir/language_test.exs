@@ -337,7 +337,7 @@ defmodule PolyglotWatcher.Elixir.LanguageTest do
       51 tests, 2 failures
       """
 
-      assert Language.mix_test_summary(output) == "51 tests, 2 failures"
+      assert Language.mix_test_summary(output) == {:ok, "51 tests, 2 failures"}
     end
 
     test "with 1 failure" do
@@ -357,7 +357,7 @@ defmodule PolyglotWatcher.Elixir.LanguageTest do
       Randomized with seed 616218
       """
 
-      assert Language.mix_test_summary(output) == "2 tests, 1 failure"
+      assert Language.mix_test_summary(output) == {:ok, "2 tests, 1 failure"}
     end
 
     test "with 1 test" do
@@ -377,7 +377,7 @@ defmodule PolyglotWatcher.Elixir.LanguageTest do
       Randomized with seed 616218
       """
 
-      assert Language.mix_test_summary(output) == "2 tests, 1 failure"
+      assert Language.mix_test_summary(output) == {:ok, "2 tests, 1 failure"}
     end
 
     test "with 1 test & 1 failure" do
@@ -397,7 +397,7 @@ defmodule PolyglotWatcher.Elixir.LanguageTest do
       Randomized with seed 413773
       """
 
-      assert Language.mix_test_summary(output) == "1 test, 1 failure"
+      assert Language.mix_test_summary(output) == {:ok, "1 test, 1 failure"}
     end
 
     test "with 0 tests & 0 failures" do
@@ -408,7 +408,28 @@ defmodule PolyglotWatcher.Elixir.LanguageTest do
       Randomized with seed 342927
       """
 
-      assert Language.mix_test_summary(output) == "0 failures"
+      assert Language.mix_test_summary(output) == {:ok, "0 failures"}
+    end
+
+    @compilation_failure """
+    Excluding tags: [:only_run_on_ci, :hubspot_integration_test]
+
+    ......................................................................................***..........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+    == Compilation error in file test/platform/backfill_subjects_from_whitehat_routes_test.exs ==
+    ** (Code.LoadError) could not load /home/berners/src/platform/priv/scripts/backfill_apprenticeship_categories_from_whitehat_routes.exs
+    (elixir 1.11.1) lib/code.ex:1452: Code.find_file/2
+    (elixir 1.11.1) lib/code.ex:924: Code.require_file/2
+    test/platform/backfill_subjects_from_whitehat_routes_test.exs:51: (module)
+    (stdlib 3.13.2) erl_eval.erl:680: :erl_eval.do_apply/6
+    (elixir 1.11.1) lib/kernel/parallel_compiler.ex:416: Kernel.ParallelCompiler.require_file/2
+    (elixir 1.11.1) lib/kernel/parallel_compiler.ex:316: anonymous fn/4 in Kernel.ParallelCompiler.spawn_workers/7
+    [os_mon] memory supervisor port (memsup): Erlang has closed
+    [os_mon] cpu supervisor port (cpu_sup): Erlang has closed
+
+    """
+
+    test "given a failure to compile, or something else unexpected, returns the whole output" do
+      assert Language.mix_test_summary(@compilation_failure) == {:error, @compilation_failure}
     end
   end
 
