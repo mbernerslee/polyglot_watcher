@@ -1,6 +1,7 @@
 defmodule PolyglotWatcher.Elixir.FixAllMode do
   alias PolyglotWatcher.Elixir.{Actions, Language}
 
+  # TODO update this
   @explanation [
     {:puts, "Switching to fix all mode"},
     {:puts, "It'll run: "},
