@@ -136,4 +136,11 @@ defmodule PolyglotWatcher.Elixir.Language do
   def set_mode(server_state, mode) do
     put_in(server_state, [:elixir, :mode], mode)
   end
+
+  def mix_test_summary(mix_test_output) do
+    case Regex.run(~r/[0-9]* tests?, [0-9]* failures?|0 failures/, mix_test_output) do
+      [result] -> result
+      _ -> raise "I couldn't parse the mix test output of '#{inspect(mix_test_output)}'"
+    end
+  end
 end

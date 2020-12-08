@@ -60,12 +60,12 @@ defmodule PolyglotWatcher.Elixir.FixAllMode do
           update_server_state: &Language.set_mode(&1, {:fix_all, :single_file}),
           run: [
             {:puts, "Checking if there're any other test failures in that file..."},
-            Actions.mix_test_head_file()
+            Actions.mix_test_head_file_quietly()
           ],
           next: %{
             @mix_test_pass_exit_code => %{
               run: [
-                {:puts, "Fixed all tests in that file!!"}
+                {:puts, :green, "Fixed all tests in that file!!"}
               ],
               continue: :mix_test
             },
@@ -76,7 +76,7 @@ defmodule PolyglotWatcher.Elixir.FixAllMode do
           update_server_state: &Language.set_mode(&1, {:fix_all, :mix_test}),
           run: [
             {:puts, "Running all tests..."},
-            Actions.mix_test()
+            Actions.mix_test_quietly()
           ],
           next: %{
             @mix_test_pass_exit_code => all_fixed(),
@@ -90,10 +90,19 @@ defmodule PolyglotWatcher.Elixir.FixAllMode do
     }
   end
 
+  # TODO add randomized insults on test failure
+  # TODO add randomized sarcastic praise on success
+  # TODO add an extra mix test --failed --max 1, to speed it up for when its really broken
+  # TODO add tput reset in the loop (and maybe other places?)
+  # TODO add some logging to say how many tests were fixed (or broken?)
+  # TODO wire in .mix test failures, instead of keeping track of failing tests ourselves
   defp all_fixed do
     %{
       run: [
-        {:puts, "Horray!!! All tests passed!"},
+        {:puts, :green, "*****************************************************"},
+        {:puts, :green, "All tests passed!"},
+        {:puts, :green, "Against all odds, you did it. Incredible. Have a cookie"},
+        {:puts, :green, "*****************************************************"},
         {:puts, "Switching back to default mode"}
       ],
       update_server_state: &Language.set_mode(&1, :default)

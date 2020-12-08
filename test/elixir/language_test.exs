@@ -311,4 +311,104 @@ defmodule PolyglotWatcher.Elixir.LanguageTest do
       assert %{elixir: %{failures: ["test/languages/elixir_test.exs:154"]}} = result
     end
   end
+
+  describe "mix_test_summary/1" do
+    test "given some mix test output, returns the 'X tests, Y failures' line" do
+      output = """
+        1) test put/1 puts the message in magenta (PolyglotWatcher.PutsTest)
+           test/puts_test.exs:18
+
+           code: flunk("")
+           stacktrace:
+             test/puts_test.exs:23: (test)
+
+
+
+        2) test put/2 all supported colours (PolyglotWatcher.PutsTest)
+           test/puts_test.exs:7
+
+           code: flunk("")
+           stacktrace:
+             test/puts_test.exs:13: (test)
+
+      ................................................
+
+      Finished in 0.4 seconds
+      51 tests, 2 failures
+      """
+
+      assert Language.mix_test_summary(output) == "51 tests, 2 failures"
+    end
+
+    test "with 1 failure" do
+      output = """
+      1) test put/1 puts the message in magenta (PolyglotWatcher.PutsTest)
+      test/puts_test.exs:17
+
+      code: flunk("")
+      stacktrace:
+       test/puts_test.exs:22: (test)
+
+      .
+
+      Finished in 0.02 seconds
+      2 tests, 1 failure
+
+      Randomized with seed 616218
+      """
+
+      assert Language.mix_test_summary(output) == "2 tests, 1 failure"
+    end
+
+    test "with 1 test" do
+      output = """
+      1) test put/1 puts the message in magenta (PolyglotWatcher.PutsTest)
+      test/puts_test.exs:17
+
+      code: flunk("")
+      stacktrace:
+       test/puts_test.exs:22: (test)
+
+      .
+
+      Finished in 0.02 seconds
+      2 tests, 1 failure
+
+      Randomized with seed 616218
+      """
+
+      assert Language.mix_test_summary(output) == "2 tests, 1 failure"
+    end
+
+    test "with 1 test & 1 failure" do
+      output = """
+      1) test put/1 puts the message in magenta (PolyglotWatcher.PutsTest)
+      test/puts_test.exs:17
+
+      code: flunk("")
+      stacktrace:
+        test/puts_test.exs:22: (test)
+
+
+
+      Finished in 0.01 seconds
+      1 test, 1 failure
+
+      Randomized with seed 413773
+      """
+
+      assert Language.mix_test_summary(output) == "1 test, 1 failure"
+    end
+
+    test "with 0 tests & 0 failures" do
+      output = """
+       Finished in 0.01 seconds
+      0 failures
+
+      Randomized with seed 342927
+      """
+
+      assert Language.mix_test_summary(output) == "0 failures"
+    end
+  end
 end

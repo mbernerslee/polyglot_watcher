@@ -37,6 +37,7 @@ defmodule PolyglotWatcher.Server do
   @impl true
   def handle_info({:file_event, _pid, {file_path, [:modified, :closed]}}, state) do
     # TODO add tests for the ignore something behavior
+
     if state.ignore_file_changes do
       {:noreply, state}
     else
@@ -49,7 +50,9 @@ defmodule PolyglotWatcher.Server do
         |> Languages.determine_actions()
         |> Executor.run_actions()
 
-      {:noreply, %{state | ignore_file_changes: false}}
+      set_ignore_file_changes(false)
+
+      {:noreply, state}
     end
   end
 

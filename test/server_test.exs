@@ -5,12 +5,14 @@ defmodule PolyglotWatcher.ServerTest do
 
   describe "start_link/1" do
     test "spawns the server process with default starting state" do
-      assert {:ok, pid} = Server.start_link([])
-      assert is_pid(pid)
+      capture_io(fn ->
+        assert {:ok, pid} = Server.start_link([])
+        assert is_pid(pid)
 
-      assert %{watcher_pid: watcher_pid, elixir: elixir} = :sys.get_state(pid)
-      assert is_pid(watcher_pid)
-      assert %{failures: [], mode: :default} == elixir
+        assert %{watcher_pid: watcher_pid, elixir: elixir} = :sys.get_state(pid)
+        assert is_pid(watcher_pid)
+        assert %{failures: [], mode: :default} == elixir
+      end)
     end
 
     test "puts message on startup" do

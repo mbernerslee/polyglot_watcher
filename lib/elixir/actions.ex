@@ -1,10 +1,15 @@
 defmodule PolyglotWatcher.Elixir.Actions do
+  alias PolyglotWatcher.Puts
   alias PolyglotWatcher.Elixir.Language
 
   # TODO collapse this module into Elixir.Language?
 
   def mix_test do
     {:module_action, __MODULE__, :mix_test}
+  end
+
+  def mix_test_quietly do
+    {:module_action, __MODULE__, :mix_test_quietly}
   end
 
   def mix_test(test_path) do
@@ -15,8 +20,33 @@ defmodule PolyglotWatcher.Elixir.Actions do
     {:module_action, __MODULE__, :mix_test_head_single}
   end
 
-  def mix_test_head_file do
-    {:module_action, __MODULE__, :mix_test_head_file}
+  def mix_test_head_file_quietly do
+    {:module_action, __MODULE__, :mix_test_head_file_quietly}
+  end
+
+  defp spinner, do: spawn(fn -> spin() end)
+
+  defp spin do
+    Puts.write(".", :green)
+    :timer.sleep(500)
+    spin()
+  end
+
+  # TODO add spinner tests somehow?
+  def run_action(:mix_test_quietly, server_state) do
+    spinner_pid = spinner()
+    {output, exit_code} = System.cmd("mix", ["test", "--color"])
+    Process.exit(spinner_pid, :kill)
+    IO.puts("")
+    summary = Language.mix_test_summary(output)
+
+    if exit_code == 0 do
+      Puts.put(summary, :green)
+    else
+      Puts.put(summary, :red)
+    end
+
+    {exit_code, Language.add_mix_test_history(server_state, output)}
   end
 
   def run_action({:mix_test, path}, server_state) do
@@ -41,14 +71,26 @@ defmodule PolyglotWatcher.Elixir.Actions do
     end
   end
 
-  def run_action(:mix_test_head_file, server_state) do
+  def run_action(:mix_test_head_file_quietly, server_state) do
     case server_state.elixir.failures do
       [] ->
         raise "i expected there to be at least one failing test in my memory, but there were none"
 
       [failure | _rest] ->
         file = trim_line_number(failure)
-        run_action({:mix_test, file}, server_state)
+        spinner_pid = spinner()
+        {output, exit_code} = System.cmd("mix", ["test", file, "--color"])
+        Process.exit(spinner_pid, :kill)
+        IO.puts("")
+        summary = Language.mix_test_summary(output)
+
+        if exit_code == 0 do
+          Puts.put(summary, :green)
+        else
+          Puts.put(summary, :red)
+        end
+
+        {exit_code, Language.add_mix_test_history(server_state, output)}
     end
   end
 

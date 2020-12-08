@@ -9,8 +9,15 @@ defmodule PolyglotWatcher.Puts do
       def put(message, unquote(colour)) do
         IO.puts(unquote(ansi_code) <> message <> IO.ANSI.reset())
       end
+
+      def write(message, unquote(colour)) do
+        IO.write(unquote(ansi_code) <> message <> IO.ANSI.reset())
+      end
     end
   )
 
   def put(message), do: put(message, :magenta)
+
+  # TODO add write tests
+  def write(message), do: write(message, :magenta)
 end

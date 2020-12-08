@@ -10,7 +10,6 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
       {_actions, server_state} = FixAllMode.enter(server_state)
 
       assert %{elixir: %{mode: {:fix_all, :mix_test}}} = server_state
-      # flunk("oopsy")
     end
 
     test "given a server_state, displays the explanation and puts the 'loop' actions" do
@@ -97,7 +96,7 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
                  next: %{
                    0 => %{
                      run: [
-                       {:puts, "Fixed all tests in that file!!"}
+                       {:puts, :green, "Fixed all tests in that file!!"}
                      ],
                      continue: :mix_test
                    },
@@ -111,7 +110,16 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
                    mix_test_action
                  ],
                  next: %{
-                   0 => _,
+                   0 => %{
+                     run: [
+                       {:puts, :green, "*****************************************************"},
+                       {:puts, :green, "All tests passed!"},
+                       {:puts, :green, "Against all odds, you did it. Incredible. Have a cookie"},
+                       {:puts, :green, "*****************************************************"},
+                       {:puts, "Switching back to default mode"}
+                     ],
+                     update_server_state: fun
+                   },
                    :fallback => %{
                      run: [],
                      continue: :single_test
@@ -123,6 +131,8 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
 
     default_server_state = ServerStateBuilder.build()
 
+    assert fun.(default_server_state) == default_server_state
+
     assert %{elixir: %{mode: {:fix_all, :single_test}}} =
              single_test_update_fun.(default_server_state)
 
@@ -131,10 +141,10 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
     assert %{elixir: %{mode: {:fix_all, :single_file}}} =
              single_file_update_fun.(default_server_state)
 
-    assert single_file_action == Actions.mix_test_head_file()
+    assert single_file_action == Actions.mix_test_head_file_quietly()
 
     assert %{elixir: %{mode: {:fix_all, :mix_test}}} = mix_test_update_fun.(default_server_state)
 
-    assert mix_test_action == Actions.mix_test()
+    assert mix_test_action == Actions.mix_test_quietly()
   end
 end
