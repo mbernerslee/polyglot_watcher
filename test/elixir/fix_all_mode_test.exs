@@ -98,9 +98,30 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
                      run: [
                        {:puts, :green, "Fixed all tests in that file!!"}
                      ],
-                     continue: :mix_test
+                     continue: :mix_test_failed_one
                    },
                    :fallback => :exit
+                 }
+               },
+               mix_test_failed_one: %{
+                 update_server_state: failed_one_updater,
+                 run: [
+                   {:puts, "Finding next failure..."},
+                   mix_test_failed_one_action
+                 ],
+                 next: %{
+                   0 => %{
+                     run: [
+                       {:puts, :green, "All previously failing tests fixed!"}
+                     ],
+                     continue: :mix_test
+                   },
+                   :fallback => %{
+                     run: [
+                       {:puts, :red, "At least one failing test remains I'm afraid"}
+                     ],
+                     continue: :single_test
+                   }
                  }
                },
                mix_test: %{
@@ -118,7 +139,7 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
                        {:puts, :green, "*****************************************************"},
                        {:puts, "Switching back to default mode"}
                      ],
-                     update_server_state: fun
+                     update_server_state: mix_test_server_state_updater
                    },
                    :fallback => %{
                      run: [],
@@ -131,12 +152,17 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
 
     default_server_state = ServerStateBuilder.build()
 
-    assert fun.(default_server_state) == default_server_state
+    assert mix_test_server_state_updater.(default_server_state) == default_server_state
 
     assert %{elixir: %{mode: {:fix_all, :single_test}}} =
              single_test_update_fun.(default_server_state)
 
     assert single_test_action == Actions.mix_test_head_single()
+
+    assert %{elixir: %{mode: {:fix_all, :mix_test_failed_one}}} =
+             failed_one_updater.(default_server_state)
+
+    assert mix_test_failed_one_action == Actions.mix_test_failed_one()
 
     assert %{elixir: %{mode: {:fix_all, :single_file}}} =
              single_file_update_fun.(default_server_state)
@@ -146,5 +172,7 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
     assert %{elixir: %{mode: {:fix_all, :mix_test}}} = mix_test_update_fun.(default_server_state)
 
     assert mix_test_action == Actions.mix_test_quietly()
+
+    # flunk("")
   end
 end

@@ -39,8 +39,7 @@ defmodule PolyglotWatcher.Elixir.Language do
   end
 
   def add_mix_test_history(server_state, mix_test_output) do
-    mix_test_output = String.split(mix_test_output, "\n")
-    new_failures = accumulate_failing_tests([], nil, mix_test_output)
+    new_failures = accumulate_failing_tests(mix_test_output)
 
     update_in(server_state, [:elixir, :failures], fn current_failures ->
       Enum.reduce(new_failures, current_failures, fn new_failure, acc ->
@@ -51,6 +50,48 @@ defmodule PolyglotWatcher.Elixir.Language do
         end
       end)
     end)
+  end
+
+  def update_mix_test_history_for_file(server_state, file, mix_test_output) do
+    failures = remove_failures_for_file(server_state, file)
+    new_failures = accumulate_failing_tests(mix_test_output)
+    put_in(server_state, [:elixir, :failures], new_failures ++ failures)
+  end
+
+  def put_failures_first(server_state, mix_test_output) do
+    case Regex.named_captures(~r|.*(?<test_file>test.*_test.exs).*|, mix_test_output) do
+      %{"test_file" => test_file} ->
+        failures = put_failures_for_file_first(server_state.elixir.failures, test_file)
+        put_in(server_state, [:elixir, :failures], failures)
+
+      _ ->
+        server_state
+    end
+  end
+
+  defp put_failures_for_file_first(failures, test_file) do
+    regex = ~r|^#{test_file}:[0-9]+|
+    put_failures_for_file_first(%{append: [], prepend: []}, failures, regex)
+  end
+
+  defp put_failures_for_file_first(acc, [], _regex) do
+    Enum.reverse(acc.prepend) ++ Enum.reverse(acc.append)
+  end
+
+  defp put_failures_for_file_first(acc, [fail | rest], regex) do
+    acc =
+      if Regex.match?(regex, fail) do
+        %{acc | prepend: [fail | acc.prepend]}
+      else
+        %{acc | append: [fail | acc.append]}
+      end
+
+    put_failures_for_file_first(acc, rest, regex)
+  end
+
+  defp remove_failures_for_file(server_state, file) do
+    regex = ~r|^#{file}:[0-9]+|
+    Enum.reject(server_state.elixir.failures, &Regex.match?(regex, &1))
   end
 
   defp fixed_path(test_path, server_state) do
@@ -69,6 +110,11 @@ defmodule PolyglotWatcher.Elixir.Language do
 
   defp default_mode(%{extension: @exs, file_path: test_path}, server_state) do
     {default_mode(test_path), server_state}
+  end
+
+  defp accumulate_failing_tests(mix_test_output) do
+    mix_test_output = String.split(mix_test_output, "\n")
+    accumulate_failing_tests([], nil, mix_test_output)
   end
 
   defp accumulate_failing_tests(acc, _, []), do: Enum.reverse(acc)

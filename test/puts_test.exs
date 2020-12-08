@@ -3,6 +3,7 @@ defmodule PolyglotWatcher.PutsTest do
   import ExUnit.CaptureIO
   alias PolyglotWatcher.Puts
 
+  # TODO fix "mix test" being fundametally broken in this project!
   describe "put/2" do
     test "all supported colours" do
       assert capture_io(fn -> Puts.put("my magenta message", :magenta) end) =~

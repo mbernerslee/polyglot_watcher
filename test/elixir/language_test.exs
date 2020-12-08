@@ -411,4 +411,161 @@ defmodule PolyglotWatcher.Elixir.LanguageTest do
       assert Language.mix_test_summary(output) == "0 failures"
     end
   end
+
+  @one_failure """
+    1) test update_mix_test_history_for_file/3 replaces all failures for file (PolyglotWatcher.Elixir.LanguageTest)
+     test/elixir/language_test.exs:469
+     hi
+     code: flunk("hi")
+     stacktrace:
+       test/elixir/language_test.exs:470: (test)
+
+  .....
+
+  Finished in 0.1 seconds
+  22 tests, 1 failure
+
+  Randomized with seed 508535
+
+  """
+
+  @no_failures """
+  Finished in 0.1 seconds
+  22 tests, 0 failures
+
+  Randomized with seed 463180
+  """
+
+  describe "update_mix_test_history_for_file/3" do
+    test "removes all failures all tests passed" do
+      failures = [
+        "test/jazz/jazz_test.exs:99",
+        "test/elixir/language_test.exs:10",
+        "test/funk/funk_test.exs:10",
+        "test/funk/funk_test.exs:20",
+        "test/elixir/language_test.exs:24",
+        "test/other/other_test.exs:66"
+      ]
+
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_elixir_failures(failures)
+
+      result =
+        Language.update_mix_test_history_for_file(
+          server_state,
+          "test/elixir/language_test.exs",
+          @no_failures
+        )
+
+      assert %{
+               elixir: %{
+                 failures: [
+                   "test/jazz/jazz_test.exs:99",
+                   "test/funk/funk_test.exs:10",
+                   "test/funk/funk_test.exs:20",
+                   "test/other/other_test.exs:66"
+                 ]
+               }
+             } = result
+    end
+
+    test "replaces all failures for file" do
+      failures = [
+        "test/elixir/language_test.exs:469",
+        "test/other/other_test.exs:20",
+        "test/elixir/language_test.exs:10",
+        "test/other/other_test.exs:10",
+        "test/elixir/language_test.exs:20",
+        "test/other/other_test.exs:30",
+        "test/elixir/language_test.exs:30"
+      ]
+
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_elixir_failures(failures)
+
+      result =
+        Language.update_mix_test_history_for_file(
+          server_state,
+          "test/elixir/language_test.exs",
+          @one_failure
+        )
+
+      assert %{
+               elixir: %{
+                 failures: [
+                   "test/elixir/language_test.exs:469",
+                   "test/other/other_test.exs:20",
+                   "test/other/other_test.exs:10",
+                   "test/other/other_test.exs:30"
+                 ]
+               }
+             } = result
+    end
+  end
+
+  @max_failures_1 """
+  1) test put_failures_first/2 x (PolyglotWatcher.Elixir.LanguageTest)
+  test/elixir/language_test.exs:509
+
+  code: flunk("")
+  stacktrace:
+    test/elixir/language_test.exs:541: (test)
+
+  --max-failures reached, aborting test suite
+
+  Finished in 0.1 seconds
+  1 test, 1 failure
+
+  Randomized with seed 972915
+  """
+
+  @max_failures_0 "There are no tests to run"
+
+  describe "put_failures_first/2" do
+    test "puts failures in the given mix test output at the top of the failures list" do
+      failures = [
+        "test/jazz/jazz_test.exs:1",
+        "test/elixir/language_test.exs:509",
+        "test/jazz/jazz_test.exs:2",
+        "test/elixir/language_test.exs:3",
+        "test/other/other_test.exs:4"
+      ]
+
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_elixir_failures(failures)
+
+      result = Language.put_failures_first(server_state, @max_failures_1)
+
+      assert %{
+               elixir: %{
+                 failures: [
+                   "test/elixir/language_test.exs:509",
+                   "test/elixir/language_test.exs:3",
+                   "test/jazz/jazz_test.exs:1",
+                   "test/jazz/jazz_test.exs:2",
+                   "test/other/other_test.exs:4"
+                 ]
+               }
+             } = result
+    end
+
+    test "makes no changes given mix test output with no failing tests" do
+      failures = [
+        "test/jazz/jazz_test.exs:1",
+        "test/elixir/language_test.exs:509",
+        "test/jazz/jazz_test.exs:2",
+        "test/elixir/language_test.exs:3",
+        "test/other/other_test.exs:4"
+      ]
+
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.with_elixir_failures(failures)
+
+      assert Language.put_failures_first(server_state, @max_failures_0) == server_state
+    end
+  end
 end
