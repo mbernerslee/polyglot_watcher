@@ -30,20 +30,30 @@ defmodule PolyglotWatcher.Elixir.Actions do
     {:module_action, __MODULE__, :mix_test_failed_one}
   end
 
+  @chars ["|", "/", "-", "\\"]
+  @char_count length(@chars)
+
   defp spinner, do: spawn(fn -> spin() end)
 
-  defp spin do
-    Puts.write(".", :green)
-    :timer.sleep(500)
-    spin()
+  defp spin, do: spin(0)
+
+  defp spin(char_index) do
+    char = Enum.at(@chars, rem(char_index, @char_count))
+    Puts.appendfully_overwrite("  #{char}", :green)
+    :timer.sleep(50)
+    spin(char_index + 1)
   end
 
   defp put_summary({:ok, summary}, @success_exit_code) do
-    Puts.put(summary, :green)
+    Puts.appendfully_overwrite("✓", :green)
+    Puts.append("  #{summary}", :green)
+    Puts.on_new_line("", :magenta)
   end
 
   defp put_summary({:ok, summary}, _) do
-    Puts.put(summary, :red)
+    Puts.appendfully_overwrite("\u274C", :red)
+    Puts.append("  #{summary}", :red)
+    Puts.on_new_line("", :magenta)
   end
 
   defp put_summary({:error, error}, _) do
@@ -56,7 +66,6 @@ defmodule PolyglotWatcher.Elixir.Actions do
     spinner_pid = spinner()
     {mix_test_output, exit_code} = System.cmd("mix", ["test", "--color"])
     Process.exit(spinner_pid, :kill)
-    IO.puts("")
 
     mix_test_output
     |> Language.mix_test_summary()
@@ -82,7 +91,7 @@ defmodule PolyglotWatcher.Elixir.Actions do
     case server_state.elixir.failures do
       [] ->
         # TODO deal with this better
-        Puts.put(
+        Puts.on_new_line(
           "i expected there to be at least one failing test in my memory, but there were none",
           :red
         )
@@ -98,7 +107,7 @@ defmodule PolyglotWatcher.Elixir.Actions do
   def run_action(:mix_test_head_file_quietly, server_state) do
     case server_state.elixir.failures do
       [] ->
-        Puts.put(
+        Puts.on_new_line(
           "i expected there to be at least one failing test in my memory, but there were none",
           :red
         )

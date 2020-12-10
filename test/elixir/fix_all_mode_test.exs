@@ -127,20 +127,12 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
                mix_test: %{
                  update_server_state: mix_test_update_fun,
                  run: [
-                   {:puts, "Running all tests..."},
+                   {:puts, ""},
+                   {:write, "Running all tests     "},
                    mix_test_action
                  ],
                  next: %{
-                   0 => %{
-                     run: [
-                       {:puts, :green, "*****************************************************"},
-                       {:puts, :green, "All tests passed!"},
-                       {:puts, :green, "Against all odds, you did it. Incredible. Have a cookie"},
-                       {:puts, :green, "*****************************************************"},
-                       {:puts, "Switching back to default mode"}
-                     ],
-                     update_server_state: mix_test_server_state_updater
-                   },
+                   0 => %{run: []},
                    :fallback => %{
                      run: [],
                      continue: :single_test
@@ -151,8 +143,6 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
            } = loop
 
     default_server_state = ServerStateBuilder.build()
-
-    assert mix_test_server_state_updater.(default_server_state) == default_server_state
 
     assert %{elixir: %{mode: {:fix_all, :single_test}}} =
              single_test_update_fun.(default_server_state)

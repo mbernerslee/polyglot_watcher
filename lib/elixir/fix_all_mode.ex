@@ -97,16 +97,11 @@ defmodule PolyglotWatcher.Elixir.FixAllMode do
         mix_test: %{
           update_server_state: &Language.set_mode(&1, {:fix_all, :mix_test}),
           run: [
-            {:puts, "Running all tests..."},
+            {:puts, ""},
+            {:write, "Running all tests     "},
             Actions.mix_test_quietly()
           ],
-          next: %{
-            @mix_test_pass_exit_code => all_fixed(),
-            :fallback => %{
-              run: [],
-              continue: :single_test
-            }
-          }
+          next: all_fixed()
         }
       }
     }
@@ -118,16 +113,16 @@ defmodule PolyglotWatcher.Elixir.FixAllMode do
   # TODO add tput reset in the loop (and maybe other places?)
   # TODO add some logging to say how many tests were fixed (or broken?)
   # TODO wire in .mix test failures, instead of keeping track of failing tests ourselves
+
   defp all_fixed do
     %{
-      run: [
-        {:puts, :green, "*****************************************************"},
-        {:puts, :green, "All tests passed!"},
-        {:puts, :green, "Against all odds, you did it. Incredible. Have a cookie"},
-        {:puts, :green, "*****************************************************"},
-        {:puts, "Switching back to default mode"}
-      ],
-      update_server_state: &Language.set_mode(&1, :default)
+      @mix_test_pass_exit_code => %{
+        run: []
+      },
+      :fallback => %{
+        run: [],
+        continue: :single_test
+      }
     }
   end
 end

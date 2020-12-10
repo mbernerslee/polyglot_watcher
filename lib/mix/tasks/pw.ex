@@ -1,11 +1,11 @@
 defmodule Mix.Tasks.Pw do
   use Mix.Task
-  alias PolyglotWatcher.Server
+  alias PolyglotWatcher
 
   @preferred_cli_env :test
 
   def run(_args) do
-    Server.start_link()
+    PolyglotWatcher.start()
     :timer.sleep(:infinity)
   end
 end

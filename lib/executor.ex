@@ -89,11 +89,19 @@ defmodule PolyglotWatcher.Executor.Real do
   end
 
   defp run_action({:puts, message}, server_state) do
-    {Puts.put(message), server_state}
+    {Puts.on_new_line(message, :magenta), server_state}
   end
 
   defp run_action({:puts, colour, message}, server_state) do
-    {Puts.put(message, colour), server_state}
+    {Puts.on_new_line(message, colour), server_state}
+  end
+
+  defp run_action({:write, message}, server_state) do
+    {Puts.append(message, :magenta), server_state}
+  end
+
+  defp run_action({:write, colour, message}, server_state) do
+    {Puts.append(message, colour), server_state}
   end
 
   # TODO use hoyons magic to solve the problem of wanting text to output on the screen line by line AND save it to a variable for parsing

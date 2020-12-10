@@ -24,8 +24,6 @@ defmodule PolyglotWatcher.Server do
 
     FileSystem.subscribe(watcher_pid)
 
-    Puts.put("Ready to go...")
-
     {:ok,
      %{
        watcher_pid: watcher_pid,
