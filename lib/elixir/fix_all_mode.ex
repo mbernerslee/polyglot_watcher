@@ -99,7 +99,7 @@ defmodule PolyglotWatcher.Elixir.FixAllMode do
           update_server_state: &Language.set_mode(&1, {:fix_all, :mix_test}),
           run: [
             {:puts, ""},
-            {:write, "Running all tests     "},
+            {:write, "Running all tests    "},
             Actions.mix_test_quietly()
           ],
           next: all_fixed()

@@ -126,7 +126,7 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
                  update_server_state: mix_test_update_fun,
                  run: [
                    {:puts, ""},
-                   {:write, "Running all tests     "},
+                   {:write, "Running all tests    "},
                    mix_test_action
                  ],
                  next: %{

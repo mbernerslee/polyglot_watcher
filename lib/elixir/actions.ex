@@ -39,20 +39,20 @@ defmodule PolyglotWatcher.Elixir.Actions do
 
   defp spin(char_index) do
     char = Enum.at(@chars, rem(char_index, @char_count))
-    Puts.appendfully_overwrite("  #{char}", :green)
+    Puts.appendfully_overwrite("   #{char}", :green)
     :timer.sleep(50)
     spin(char_index + 1)
   end
 
   defp put_summary({:ok, summary}, @success_exit_code) do
     Puts.appendfully_overwrite("✓", :green)
-    Puts.append("  #{summary}", :green)
+    Puts.append("   #{summary}", :green)
     Puts.on_new_line("", :magenta)
   end
 
   defp put_summary({:ok, summary}, _) do
     Puts.appendfully_overwrite("\u274C", :red)
-    Puts.append("  #{summary}", :red)
+    Puts.append("   #{summary}", :red)
     Puts.on_new_line("", :magenta)
   end
 
@@ -133,8 +133,10 @@ defmodule PolyglotWatcher.Elixir.Actions do
 
   def run_action(:mix_test_failed_one, server_state) do
     spinner_pid = spinner()
+
     {mix_test_output, exit_code} =
       System.cmd("mix", ["test", "--color", "--failed", "--max-failures", "1"])
+
     Process.exit(spinner_pid, :kill)
 
     mix_test_output
