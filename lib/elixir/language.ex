@@ -183,8 +183,12 @@ defmodule PolyglotWatcher.Elixir.Language do
     put_in(server_state, [:elixir, :mode], mode)
   end
 
+  # TODO add a There are no tests to run test
   def mix_test_summary(mix_test_output) do
-    case Regex.run(~r/[0-9]* tests?, [0-9]* failures?|0 failures/, mix_test_output) do
+    case Regex.run(
+           ~r/[0-9]* tests?, [0-9]* failures?|0 failures|There are no tests to run/,
+           mix_test_output
+         ) do
       [result] -> {:ok, result}
       _ -> {:error, mix_test_output}
     end

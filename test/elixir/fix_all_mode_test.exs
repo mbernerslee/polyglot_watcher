@@ -90,14 +90,13 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
                single_file: %{
                  update_server_state: single_file_update_fun,
                  run: [
-                   {:puts, "Checking if there're any other test failures in that file..."},
+                   {:puts, ""},
+                   {:write, "Checking if there're any other test failures in that file    "},
                    single_file_action
                  ],
                  next: %{
                    0 => %{
-                     run: [
-                       {:puts, :green, "Fixed all tests in that file!!"}
-                     ],
+                     run: [],
                      continue: :mix_test_failed_one
                    },
                    :fallback => :exit
@@ -106,14 +105,13 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
                mix_test_failed_one: %{
                  update_server_state: failed_one_updater,
                  run: [
-                   {:puts, "Finding next failure..."},
+                   {:puts, ""},
+                   {:write, "Running 'mix test --color --failed --max-failures 1'    "},
                    mix_test_failed_one_action
                  ],
                  next: %{
                    0 => %{
-                     run: [
-                       {:puts, :green, "All previously failing tests fixed!"}
-                     ],
+                     run: [],
                      continue: :mix_test
                    },
                    :fallback => %{
@@ -163,6 +161,8 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
 
     assert mix_test_action == Actions.mix_test_quietly()
 
+    # TODO dont say "59 test, 2 failures", also say how many files the failures are spread across
+    # TODO dont say "Running a single test until it passes. Say which test it is!"
     # flunk("")
   end
 end

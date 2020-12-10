@@ -119,7 +119,6 @@ defmodule PolyglotWatcher.Elixir.Actions do
         spinner_pid = spinner()
         {mix_test_output, exit_code} = System.cmd("mix", ["test", file, "--color"])
         Process.exit(spinner_pid, :kill)
-        IO.puts("")
 
         mix_test_output
         |> Language.mix_test_summary()
@@ -133,8 +132,14 @@ defmodule PolyglotWatcher.Elixir.Actions do
   end
 
   def run_action(:mix_test_failed_one, server_state) do
+    spinner_pid = spinner()
     {mix_test_output, exit_code} =
       System.cmd("mix", ["test", "--color", "--failed", "--max-failures", "1"])
+    Process.exit(spinner_pid, :kill)
+
+    mix_test_output
+    |> Language.mix_test_summary()
+    |> put_summary(exit_code)
 
     {exit_code, Language.put_failures_first(server_state, mix_test_output)}
   end

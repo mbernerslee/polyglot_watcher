@@ -60,14 +60,13 @@ defmodule PolyglotWatcher.Elixir.FixAllMode do
         single_file: %{
           update_server_state: &Language.set_mode(&1, {:fix_all, :single_file}),
           run: [
-            {:puts, "Checking if there're any other test failures in that file..."},
+            {:puts, ""},
+            {:write, "Checking if there're any other test failures in that file    "},
             Actions.mix_test_head_file_quietly()
           ],
           next: %{
             @mix_test_pass_exit_code => %{
-              run: [
-                {:puts, :green, "Fixed all tests in that file!!"}
-              ],
+              run: [],
               continue: :mix_test_failed_one
             },
             :fallback => :exit
@@ -76,13 +75,15 @@ defmodule PolyglotWatcher.Elixir.FixAllMode do
         mix_test_failed_one: %{
           update_server_state: &Language.set_mode(&1, {:fix_all, :mix_test_failed_one}),
           run: [
-            {:puts, "Finding next failure..."},
+            {:puts, ""},
+            {:write, "Running 'mix test --color --failed --max-failures 1'    "},
             Actions.mix_test_failed_one()
           ],
           next: %{
             @mix_test_pass_exit_code => %{
               run: [
-                {:puts, :green, "All previously failing tests fixed!"}
+                # {:puts, :green, ""},
+                # {:puts, :green, "All previously failing tests fixed!"}
               ],
               continue: :mix_test
             },
