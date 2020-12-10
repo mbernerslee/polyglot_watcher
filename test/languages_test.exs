@@ -1,5 +1,5 @@
 defmodule PolyglotWatcher.Languages.ExampleLanguageModule do
-  alias PolyglotWatcher.Languages.Language
+  alias PolyglotWatcher.Language
   @behaviour Language
 
   @impl Language

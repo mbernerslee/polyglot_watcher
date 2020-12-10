@@ -1,8 +1,6 @@
 defmodule PolyglotWatcher.Elixir.Actions do
-  alias PolyglotWatcher.Puts
+  alias PolyglotWatcher.{CommonActions, Puts}
   alias PolyglotWatcher.Elixir.Language
-
-  # TODO collapse this module into Elixir.Language?
 
   @success_exit_code 0
 
@@ -30,59 +28,48 @@ defmodule PolyglotWatcher.Elixir.Actions do
     {:module_action, __MODULE__, :mix_test_failed_one}
   end
 
-  @chars ["|", "/", "-", "\\"]
-  @char_count length(@chars)
-
-  defp spinner, do: spawn(fn -> spin() end)
-
-  defp spin, do: spin(0)
-
-  defp spin(char_index) do
-    char = Enum.at(@chars, rem(char_index, @char_count))
-    Puts.appendfully_overwrite("   #{char}", :green)
-    :timer.sleep(50)
-    spin(char_index + 1)
+  defp put_summary({:ok, summary}, @success_exit_code, previous_line) do
+    Puts.on_previous_line(previous_line ++ [{:green, "✓ #{summary}"}])
   end
 
-  defp put_summary({:ok, summary}, @success_exit_code) do
-    Puts.appendfully_overwrite("✓", :green)
-    Puts.append("   #{summary}", :green)
-    Puts.on_new_line("", :magenta)
-  end
-
-  defp put_summary({:ok, summary}, _) do
-    Puts.appendfully_overwrite("\u274C", :red)
-    Puts.append("   #{summary}", :red)
-    Puts.on_new_line("", :magenta)
+  defp put_summary({:ok, summary}, _, previous_line) do
+    Puts.on_previous_line(previous_line ++ [{:red, "\u274C #{summary}"}])
   end
 
   defp put_summary({:error, error}, _) do
     IO.puts(error)
   end
 
-  # TODO add spinner tests somehow?
-  # TODO abstract away the spinner stuff into a function that recieves a do block "do while spinning" or "spin while"
   def run_action(:mix_test_quietly, server_state) do
-    spinner_pid = spinner()
-    {mix_test_output, exit_code} = System.cmd("mix", ["test", "--color"])
-    Process.exit(spinner_pid, :kill)
+    message = "Running 'mix test' "
+    colour = :magenta
+    current_line = [{colour, message}]
+    Puts.on_new_line(message, colour)
+
+    {mix_test_output, exit_code} =
+      CommonActions.spin_while(
+        fn -> System.cmd("mix", ["test", "--color"], stderr_to_stdout: true) end,
+        current_line
+      )
 
     mix_test_output
     |> Language.mix_test_summary()
-    |> put_summary(exit_code)
+    |> put_summary(exit_code, current_line)
 
     # TODO add a test that would fail if this was add instead of reset!
     {exit_code, Language.reset_mix_test_history(server_state, mix_test_output)}
   end
 
   def run_action({:mix_test, path}, server_state) do
-    {mix_test_output, exit_code} = System.cmd("mix", ["test", path, "--color"])
+    {mix_test_output, exit_code} =
+      System.cmd("mix", ["test", path, "--color"], stderr_to_stdout: true)
+
     IO.puts(mix_test_output)
     {exit_code, Language.add_mix_test_history(server_state, mix_test_output)}
   end
 
   def run_action(:mix_test, server_state) do
-    {mix_test_output, exit_code} = System.cmd("mix", ["test", "--color"])
+    {mix_test_output, exit_code} = System.cmd("mix", ["test", "--color"], stderr_to_stdout: true)
     IO.puts(mix_test_output)
     {exit_code, Language.reset_mix_test_history(server_state, mix_test_output)}
   end
@@ -99,6 +86,7 @@ defmodule PolyglotWatcher.Elixir.Actions do
         {1, Language.set_mode(server_state, {:fix_all, :mix_test})}
 
       [failure | _rest] ->
+        Puts.on_new_line("Running 'mix test #{failure}'...until it passes", :magenta)
         run_action({:mix_test, failure}, server_state)
     end
   end
@@ -116,13 +104,23 @@ defmodule PolyglotWatcher.Elixir.Actions do
 
       [failure | _rest] ->
         file = trim_line_number(failure)
-        spinner_pid = spinner()
-        {mix_test_output, exit_code} = System.cmd("mix", ["test", file, "--color"])
-        Process.exit(spinner_pid, :kill)
+
+        message = "Running 'mix test #{file}'  "
+        colour = :magenta
+        current_line = [{colour, message}]
+        Puts.on_new_line(message, :magenta)
+
+        {mix_test_output, exit_code} =
+          CommonActions.spin_while(
+            fn ->
+              System.cmd("mix", ["test", file, "--color"], stderr_to_stdout: true)
+            end,
+            current_line
+          )
 
         mix_test_output
         |> Language.mix_test_summary()
-        |> put_summary(exit_code)
+        |> put_summary(exit_code, current_line)
 
         server_state =
           Language.update_mix_test_history_for_file(server_state, file, mix_test_output)
@@ -132,16 +130,24 @@ defmodule PolyglotWatcher.Elixir.Actions do
   end
 
   def run_action(:mix_test_failed_one, server_state) do
-    spinner_pid = spinner()
+    message = "Running 'mix test --color --failed --max-failures 1'    "
+    colour = :magenta
+    current_line = [{colour, message}]
+    Puts.on_new_line(message, colour)
 
     {mix_test_output, exit_code} =
-      System.cmd("mix", ["test", "--color", "--failed", "--max-failures", "1"])
-
-    Process.exit(spinner_pid, :kill)
+      CommonActions.spin_while(
+        fn ->
+          System.cmd("mix", ["test", "--color", "--failed", "--max-failures", "1"],
+            stderr_to_stdout: true
+          )
+        end,
+        current_line
+      )
 
     mix_test_output
     |> Language.mix_test_summary()
-    |> put_summary(exit_code)
+    |> put_summary(exit_code, current_line)
 
     {exit_code, Language.put_failures_first(server_state, mix_test_output)}
   end

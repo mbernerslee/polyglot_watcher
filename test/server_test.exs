@@ -3,7 +3,6 @@ defmodule PolyglotWatcher.ServerTest do
   import ExUnit.CaptureIO
   alias PolyglotWatcher.{Server, ServerStateBuilder}
 
-  # TODO add clear screen when switching to fix all mode
   describe "start_link/1" do
     test "spawns the server process with default starting state" do
       capture_io(fn ->

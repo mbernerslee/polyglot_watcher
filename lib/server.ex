@@ -34,14 +34,11 @@ defmodule PolyglotWatcher.Server do
 
   @impl true
   def handle_info({:file_event, _pid, {file_path, [:modified, :closed]}}, state) do
-    # TODO add tests for the ignore something behavior
-
     if state.ignore_file_changes do
       {:noreply, state}
     else
       set_ignore_file_changes(true)
 
-      # TODO add a test that would file if state is not rebound
       state =
         file_path
         |> FileSystemChange.determine_language_module(state)

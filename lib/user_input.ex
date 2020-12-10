@@ -1,8 +1,6 @@
 defmodule PolyglotWatcher.UserInput do
-  alias PolyglotWatcher.Elixir.UserInput, as: ElixirUserInput
-  alias PolyglotWatcher.Elixir.Actions, as: ElixirActions
+  alias PolyglotWatcher.Elixir.UserInputParser, as: ElixirUserInputParser
 
-  # TODO move language usage stuff to language specific module
   @usage """
   Usage
 
@@ -14,54 +12,33 @@ defmodule PolyglotWatcher.UserInput do
     ex a                  -  run 'mix test' (run all tests)
   """
 
-  @languages [
-    ElixirUserInput
-  ]
+  @languages [ElixirUserInputParser]
 
-  # TODO have a "ex ra" mode that runes 'mix test' given any elixir file change
-  # TODO make it clear that ex a runs all the tests as a one off
-  # TODO move the language specific parsing test elsewhere? Have a token test that language is wired in?
-  def determine_actions(user_input, server_state) do
+  def usage, do: @usage
+
+  def parse(user_input, prefix) do
+    user_input
+    |> String.split("#{prefix} ", parts: 2)
+    |> Enum.map(&String.trim/1)
+    |> case do
+      ["", result] -> {:ok, result}
+      _ -> :error
+    end
+  end
+
+  def determine_actions(user_input, server_state, languages \\ @languages) do
     user_input = String.trim(user_input)
-    find_language_actions(@languages, user_input, server_state)
+    determine(languages, user_input, server_state)
   end
 
-  defp find_language_actions([], user_input, server_state) do
-    maybe_enter_fixed_file_mode(user_input, server_state)
-  end
-
-  defp find_language_actions([language | rest], user_input, server_state) do
-    case language.determine(user_input, server_state) do
-      {:ok, {actions, server_state}} -> {actions, server_state}
-      :error -> find_language_actions(rest, user_input, server_state)
-    end
-  end
-
-  # TODO move this to an elixir specific module somehow?
-  defp maybe_enter_fixed_file_mode(user_input, server_state) do
-    case String.split(user_input, "ex ") do
-      ["", possible_file_path] ->
-        if legit_looking_test_file?(possible_file_path) do
-          {[
-             {:puts, "Switching to fixed file mode"},
-             {:puts, "I'll only run 'mix test #{possible_file_path}' unless told otherwise"},
-             {:puts, "Return to default mode by entering 'ex d'"},
-             ElixirActions.mix_test(possible_file_path)
-           ], put_in(server_state, [:elixir, :mode], {:fixed_file, possible_file_path})}
-        else
-          echo_usage(server_state)
-        end
-
-      _ ->
-        echo_usage(server_state)
-    end
-  end
-
-  defp echo_usage(server_state) do
+  defp determine([], _user_input, server_state) do
     {[{:puts, @usage}], server_state}
   end
 
-  defp legit_looking_test_file?(file_path) do
-    Regex.match?(~r|^test/.+_test.exs.*|, file_path)
+  defp determine([language | rest], user_input, server_state) do
+    case language.determine_actions(user_input, server_state) do
+      {:ok, {actions, server_state}} -> {actions, server_state}
+      :error -> determine(rest, user_input, server_state)
+    end
   end
 end

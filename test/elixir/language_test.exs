@@ -26,7 +26,7 @@ defmodule PolyglotWatcher.Elixir.LanguageTest do
                )
 
       assert %{
-               run: [],
+               run: _,
                next: %{
                  :fallback => %{loop_entry_point: :single_test}
                }
@@ -430,6 +430,14 @@ defmodule PolyglotWatcher.Elixir.LanguageTest do
 
     test "given a failure to compile, or something else unexpected, returns the whole output" do
       assert Language.mix_test_summary(@compilation_failure) == {:error, @compilation_failure}
+    end
+
+    test "with no tests to run" do
+      output = """
+        There are no tests to run
+      """
+
+      assert Language.mix_test_summary(output) == {:ok, "There are no tests to run"}
     end
   end
 

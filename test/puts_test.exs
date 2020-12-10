@@ -3,94 +3,84 @@ defmodule PolyglotWatcher.PutsTest do
   import ExUnit.CaptureIO
   alias PolyglotWatcher.Puts
 
-  # TODO fix "mix test" being fundametally broken in this project!
-  describe "on_new_line/2, append/2 and prepend/2" do
-    test "puts all supported colours" do
-      {:ok, pid} = Puts.start_link([])
+  describe "on_new_line/1" do
+    test "given only one string arg, prints the colour in magenta" do
+      assert capture_io(fn -> Puts.on_new_line("my magenta message") end) ==
+               "\e[35mmy magenta message\e[0m\n"
+    end
 
-      assert capture_io(fn -> Puts.on_new_line("my magenta message", :magenta, pid) end) =~
-               "my magenta message"
+    test "given a list of {colour, message} tuples, prints in multicolours" do
+      assert capture_io(fn ->
+               Puts.on_new_line([{:magenta, "magenta"}, {:red, "red"}, {:green, "green"}])
+             end) == "\e[35mmagenta\e[0m\e[31mred\e[0m\e[32mgreen\e[0m\n"
+    end
+  end
 
-      assert :sys.get_state(pid).current_line == [{"\e[35m", "my magenta message"}]
+  describe "on_new_line/2" do
+    test "can print in the supported colours" do
+      assert capture_io(fn -> Puts.on_new_line("my magenta message", :magenta) end) ==
+               "\e[35mmy magenta message\e[0m\n"
 
-      assert capture_io(fn -> Puts.on_new_line("my red message", :red, pid) end) =~
-               "my red message"
+      assert capture_io(fn -> Puts.on_new_line("my red message", :red) end) ==
+               "\e[31mmy red message\e[0m\n"
 
-      assert :sys.get_state(pid).current_line == [{"\e[31m", "my red message"}]
-
-      assert capture_io(fn -> Puts.on_new_line("my green message", :green, pid) end) =~
-               "my green message"
-
-      assert :sys.get_state(pid).current_line == [{"\e[32m", "my green message"}]
-
-      assert capture_io(fn -> Puts.append(" APPEND ME", :red, pid) end) =~
-               " APPEND ME"
-
-      assert :sys.get_state(pid).current_line ==
-               [{"\e[32m", "my green message"}, {"\e[31m", " APPEND ME"}]
-
-      assert capture_io(fn -> Puts.prepend("PREPEND ME ", :magenta, pid) end) =~
-               "PREPEND ME "
-
-      assert :sys.get_state(pid).current_line ==
-               [
-                 {"\e[35m", "PREPEND ME "},
-                 {"\e[32m", "my green message"},
-                 {"\e[31m", " APPEND ME"}
-               ]
-
-      assert capture_io(fn -> Puts.appendfully_overwrite("XYZ", :green, pid) end) =~
-               "XYZ"
-
-      assert :sys.get_state(pid).current_line ==
-               [
-                 {"\e[35m", "PREPEND ME "},
-                 {"\e[32m", "my green message"},
-                 {"\e[31m", " APPEND"},
-                 {"\e[32m", "XYZ"}
-               ]
-
-      assert capture_io(fn -> Puts.appendfully_overwrite("1234567891", :magenta, pid) end) =~
-               "1234567891"
-
-      assert :sys.get_state(pid).current_line ==
-               [
-                 {"\e[35m", "PREPEND ME "},
-                 {"\e[32m", "my green message"},
-                 {"\e[35m", "1234567891"}
-               ]
+      assert capture_io(fn -> Puts.on_new_line("my green message", :green) end) ==
+               "\e[32mmy green message\e[0m\n"
 
       assert capture_io(fn ->
-               Puts.appendfully_overwrite("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", :red, pid)
-             end) =~
-               "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+               Puts.on_new_line("my magenta message", :magenta)
+               Puts.on_new_line("my magenta message", :magenta)
+             end) == "\e[35mmy magenta message\e[0m\n\e[35mmy magenta message\e[0m\n"
+    end
 
-      assert :sys.get_state(pid).current_line ==
-               [
-                 {"\e[35m", "P"},
-                 {"\e[31m", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}
-               ]
+    test "raises given a bad colour" do
+      assert_raise RuntimeError, fn -> Puts.on_new_line("my magenta message", :jank) end
+    end
+  end
+
+  describe "on_previous_line/1" do
+    test "given only one string arg, overwrites the previous line in magenta" do
+      assert capture_io(fn ->
+               IO.puts("hello dave")
+               Puts.on_previous_line("my magenta message")
+             end) == "hello dave\n\e[1A\e[K\e[35mmy magenta message\e[0m\n"
+    end
+
+    test "given a list of {colour, message} tuples, prints in multicolours" do
+      assert capture_io(fn ->
+               IO.puts("hello dave")
+               Puts.on_previous_line([{:magenta, "magenta"}, {:red, "red"}, {:green, "green"}])
+             end) == "hello dave\n\e[1A\e[K\e[35mmagenta\e[0m\e[31mred\e[0m\e[32mgreen\e[0m\n"
+    end
+  end
+
+  describe "on_previous_line/2" do
+    test "can print in the supported colours" do
+      assert capture_io(fn ->
+               IO.puts("hello dave")
+               Puts.on_previous_line("my magenta message", :magenta)
+             end) == "hello dave\n\e[1A\e[K\e[35mmy magenta message\e[0m\n"
 
       assert capture_io(fn ->
-               Puts.appendfully_overwrite("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB", :green, pid)
-             end) =~
-               "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
-
-      assert :sys.get_state(pid).current_line ==
-               [
-                 {"\e[32m", "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"}
-               ]
+               IO.puts("hello dave")
+               Puts.on_previous_line("my red message", :red)
+             end) == "hello dave\n\e[1A\e[K\e[31mmy red message\e[0m\n"
 
       assert capture_io(fn ->
-               Puts.appendfully_overwrite("XYZ", :red, pid)
-             end) =~
-               "XYZ"
+               IO.puts("but my name's rodney")
+               Puts.on_previous_line("my green message", :green)
+             end) == "but my name's rodney\n\e[1A\e[K\e[32mmy green message\e[0m\n"
 
-      assert :sys.get_state(pid).current_line ==
-               [
-                 {"\e[32m", "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"},
-                 {"\e[31m", "XYZ"}
-               ]
+      assert capture_io(fn ->
+               IO.puts("only you call me dave")
+               Puts.on_previous_line("my magenta message", :magenta)
+               Puts.on_previous_line("my magenta message", :magenta)
+             end) ==
+               "only you call me dave\n\e[1A\e[K\e[35mmy magenta message\e[0m\n\e[1A\e[K\e[35mmy magenta message\e[0m\n"
+    end
+
+    test "raises given a bad colour" do
+      assert_raise RuntimeError, fn -> Puts.on_previous_line("my magenta message", :jank) end
     end
   end
 end

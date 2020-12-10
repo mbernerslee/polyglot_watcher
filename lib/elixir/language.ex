@@ -1,5 +1,5 @@
 defmodule PolyglotWatcher.Elixir.Language do
-  alias PolyglotWatcher.Languages.Language
+  alias PolyglotWatcher.Language
   alias PolyglotWatcher.Elixir.{Actions, FixAllMode}
   @behaviour Language
 
@@ -140,7 +140,6 @@ defmodule PolyglotWatcher.Elixir.Language do
     end
   end
 
-  # TODO test coverage is missing here
   defp default_mode(test_path) do
     %{
       run: [{:run_elixir_fn, fn -> File.exists?(test_path) end}],
@@ -183,7 +182,6 @@ defmodule PolyglotWatcher.Elixir.Language do
     put_in(server_state, [:elixir, :mode], mode)
   end
 
-  # TODO add a There are no tests to run test
   def mix_test_summary(mix_test_output) do
     case Regex.run(
            ~r/[0-9]* tests?, [0-9]* failures?|0 failures|There are no tests to run/,

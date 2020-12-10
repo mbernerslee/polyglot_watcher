@@ -105,14 +105,13 @@ defmodule PolyglotWatcher.Executor.Real do
   end
 
   defp run_action({:append_over, message}, server_state) do
-    {Puts.appendfully_overwrite(message, :magenta), server_state}
+    {Puts.append_to_previous_line(message, :magenta), server_state}
   end
 
   defp run_action({:append_over, colour, message}, server_state) do
-    {Puts.appendfully_overwrite(message, colour), server_state}
+    {Puts.append_to_previous_line(message, colour), server_state}
   end
 
-  # TODO use hoyons magic to solve the problem of wanting text to output on the screen line by line AND save it to a variable for parsing
   defp run_action({:module_action, module, args}, server_state) do
     module.run_action(args, server_state)
   end
