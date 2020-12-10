@@ -1,6 +1,10 @@
 defmodule FakeLanguage.Pear do
+  alias PolyglotWatcher.UserInputParser
+
+  @impl UserInputParser
   def prefix, do: "pear"
 
+  @impl UserInputParser
   def determine_actions(user_input, server_state) do
     user_input
     |> String.split(prefix(), trim: true)
@@ -14,8 +18,12 @@ defmodule FakeLanguage.Pear do
 end
 
 defmodule FakeLanguage.Blueberry do
+  alias PolyglotWatcher.UserInputParser
+
+  @impl UserInputParser
   def prefix, do: "blueb"
 
+  @impl UserInputParser
   def determine_actions(user_input, server_state) do
     user_input
     |> String.split(prefix(), trim: true)

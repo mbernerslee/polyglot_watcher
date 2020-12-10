@@ -130,7 +130,7 @@ defmodule PolyglotWatcher.Elixir.Actions do
   end
 
   def run_action(:mix_test_failed_one, server_state) do
-    message = "Running 'mix test --color --failed --max-failures 1'    "
+    message = "Running 'mix test --failed --max-failures 1'    "
     colour = :magenta
     current_line = [{colour, message}]
     Puts.on_new_line(message, colour)
