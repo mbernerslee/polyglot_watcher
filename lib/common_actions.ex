@@ -1,8 +1,6 @@
 defmodule PolyglotWatcher.CommonActions do
   alias PolyglotWatcher.Puts
 
-  # TODO write it into places
-
   @chars ["|", "/", "-", "\\"]
   @char_count length(@chars)
 
