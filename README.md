@@ -23,7 +23,8 @@ Now you should be able to run `polyglot_watcher` from any directory
 
 ### Default Mode
 `ex d` will switch to this mode\
-Any detected save to `.ex` or `.exs` files to trigger a test run will run the corresponding test. e.g.
+Any detected save to `.ex` or `.exs` files will trigger a test run for the corresponding test only\
+e.g.
 - saving `lib/my/cool/code.ex` will trigger `mix test test/my/cool/code_test.exs`
 - saving `test/my/cool/code_test.exs` will trigger `mix test test/my/cool/code_test.exs`
 
