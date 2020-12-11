@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Pw do
   @preferred_cli_env :test
 
   def run(_args) do
-    PolyglotWatcher.start()
+    PolyglotWatcher.main()
     :timer.sleep(:infinity)
   end
 end

@@ -72,7 +72,6 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
       msg = "Unrecognised entry_point 'nonsense'"
 
       assert_raise RuntimeError, msg, fn -> FixAllMode.actions(server_state, :nonsense) end
-      # flunk("")
     end
   end
 
@@ -96,8 +95,6 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
                single_file: %{
                  update_server_state: single_file_update_fun,
                  run: [
-                   # {:write, "\n\r"},
-                   # {:write, "Checking if there're any other test failures in that file    "},
                    single_file_action
                  ],
                  next: %{
@@ -122,9 +119,7 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
                      continue: :mix_test
                    },
                    :fallback => %{
-                     run: [
-                       # {:puts, :red, "At least one failing test remains I'm afraid"}
-                     ],
+                     run: [],
                      continue: :single_test
                    }
                  }
@@ -132,8 +127,6 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
                mix_test: %{
                  update_server_state: mix_test_update_fun,
                  run: [
-                   # {:puts, ""},
-                   # {:write, "Running all tests    "},
                    mix_test_action
                  ],
                  next: %{

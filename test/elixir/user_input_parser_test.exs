@@ -21,8 +21,6 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
                  }
                }
              } = actions
-
-      # flunk("")
     end
   end
 

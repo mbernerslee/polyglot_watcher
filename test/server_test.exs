@@ -86,8 +86,6 @@ defmodule PolyglotWatcher.ServerTest do
 
       assert {:noreply, %{elixir: %{mode: :default}}} =
                Server.handle_call({:user_input, "ex d\n"}, :from, server_state)
-
-      # flunk("")
     end
   end
 end

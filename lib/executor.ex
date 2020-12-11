@@ -96,22 +96,6 @@ defmodule PolyglotWatcher.Executor.Real do
     {Puts.on_new_line(message, colour), server_state}
   end
 
-  defp run_action({:write, message}, server_state) do
-    {Puts.append(message, :magenta), server_state}
-  end
-
-  defp run_action({:write, colour, message}, server_state) do
-    {Puts.append(message, colour), server_state}
-  end
-
-  defp run_action({:append_over, message}, server_state) do
-    {Puts.append_to_previous_line(message, :magenta), server_state}
-  end
-
-  defp run_action({:append_over, colour, message}, server_state) do
-    {Puts.append_to_previous_line(message, colour), server_state}
-  end
-
   defp run_action({:module_action, module, args}, server_state) do
     module.run_action(args, server_state)
   end

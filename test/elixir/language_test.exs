@@ -595,7 +595,6 @@ defmodule PolyglotWatcher.Elixir.LanguageTest do
         |> ServerStateBuilder.with_elixir_failures(failures)
 
       assert Language.put_failures_first(server_state, @max_failures_0) == server_state
-      # flunk("")
     end
   end
 end

@@ -36,7 +36,7 @@ defmodule PolyglotWatcher.Elixir.Actions do
     Puts.on_previous_line(previous_line ++ [{:red, "\u274C #{summary}"}])
   end
 
-  defp put_summary({:error, error}, _) do
+  defp put_summary({:error, error}, _, _) do
     IO.puts(error)
   end
 
