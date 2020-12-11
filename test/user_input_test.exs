@@ -70,6 +70,13 @@ defmodule PolyglotWatcher.UserInputTest do
       assert {[{:puts, "nom"}], %{nom: true}} = result
     end
 
+    test "given language agnostic input commands" do
+      server_state = ServerStateBuilder.build()
+
+      result = UserInput.determine_actions("c\n", server_state, @fake_languages)
+      assert {[{:run_sys_cmd, "tput", ["reset"]}], ^server_state} = result
+    end
+
     test "when given something that's not understood at all, prints the usage" do
       server_state = ServerStateBuilder.build()
 
@@ -92,8 +99,10 @@ defmodule PolyglotWatcher.UserInputTest do
 
       assert usage ==
                "Usage\n\n" <>
+                 "General\n" <>
+                 "  c - clears the screen\n\n" <>
                  "how to use pear\n\n" <>
-                 "how to use blueb\n" <>
+                 "how to use blueb\n\n" <>
                  "Any unrecocogised input - prints this message"
     end
   end

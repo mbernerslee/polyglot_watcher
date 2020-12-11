@@ -1,4 +1,0 @@
-#!/bin/bash
-
-MIX_ENV=prod mix release prod --overwrite
-_build/prod/rel/prod/bin/prod start_iex
