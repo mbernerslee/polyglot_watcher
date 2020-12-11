@@ -1,4 +1,5 @@
 # PolyglotWatcher
+A test watcher which can switch modes to change what it will run when different files are saved.
 
 ## Supported OS
   - Linux (presumably most distrubutions)
@@ -64,7 +65,7 @@ Switching to this mode will fail if the stored history of failing tests is empty
 
 ### Run 'mix test' as a one off
 `ex a` will not switch mode.\
-It will run `mix test` and show the full output on screen
+It will run `mix test` and show the full output on screen\
 
 ## License
 Copyright © 2020 Matthew Berners-Lee mattbernerslee@gmail.com\
