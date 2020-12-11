@@ -24,7 +24,6 @@ Now you should be able to run `polyglot_watcher` from any directory
 ### Default Mode
 `ex d` will switch to this mode\
 Any detected save to `.ex` or `.exs` files will trigger a test run for the corresponding test only\
-e.g.
 - saving `lib/my/cool/code.ex` will trigger `mix test test/my/cool/code_test.exs`
 - saving `test/my/cool/code_test.exs` will trigger `mix test test/my/cool/code_test.exs`
 
@@ -65,7 +64,7 @@ Switching to this mode will fail if the stored history of failing tests is empty
 
 ### Run 'mix test' as a one off
 `ex a` will not switch mode.\
-It will run `mix test` and show the full output on screen\
+It will run `mix test` and show the full output on screen
 
 ## License
 Copyright © 2020 Matthew Berners-Lee mattbernerslee@gmail.com\
