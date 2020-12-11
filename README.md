@@ -32,7 +32,7 @@ Any detected save to `.ex` or `.exs` files to trigger a test run will run the co
 Only show the output from one failing test at a time, until all the tests pass.\
 \
 Runs a a sequence of `mix test` commands until all the tests pass.\
-Stays at a particular step in the steps listened below, until a condition to trigger moving to the next step is reached.\
+Stays at a particular step in the steps listened below, until a condition to trigger moving to the next step is reached.
 
 1. `mix test`\
 Does not show the full test output.
