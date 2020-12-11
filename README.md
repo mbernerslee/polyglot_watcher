@@ -33,22 +33,22 @@ Only show the output from one failing test at a time, until all the tests pass.\
 \
 Runs a a sequence of `mix test` commands until all the tests pass.\
 Stays at a particular step in the steps listened below, until a condition to trigger moving to the next step is reached.\
-\
-1. `mix test`
+
+1. `mix test`\
 Does not show the full test output.
 - on success, stops here
 - on failure, runs step 2
-2. `mix test /path/to/specific/failure_test.exs:23`
+2. `mix test /path/to/specific/failure_test.exs:23`\
 This step does show the full test output so that you can make the test pass.
 Picks a failing test and runs it until it passes
 Saving any elixir file will trigger this same test run until it passes
 - on success, go to next step
 - on failure, stays at this step
-3. `mix test /path/to/specific/failure_test.exs`
+3. `mix test /path/to/specific/failure_test.exs`\
 Runs all the tests from the file in step 2
 - on success, go to step 4
 - on failure, go back to step 2 with a new failing test
-4. `mix test mix test --failed --max-failures 1`
+4. `mix test mix test --failed --max-failures 1`\
 Finds the next test failure
 - on success, go to step 1
 - on failure, go back to step 2 with a new failing test
