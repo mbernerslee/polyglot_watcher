@@ -1,20 +1,19 @@
 defmodule PolyglotWatcher.UserInput do
   alias PolyglotWatcher.Elixir.UserInputParser, as: ElixirUserInputParser
 
-  @usage """
-  Usage
-
-  Elixir
-    ex f                  -  fixed mode: only run the most recently run test that failed (when elixir files are saved)
-    ex /path/to/test.exs  -  fixed mode: only run that test (when elixir files are saved)
-    ex fa                 -  fix all mode
-    ex d                  -  default mode: return to default elixir settings
-    ex a                  -  run 'mix test' (run all tests)
-  """
-
   @languages [ElixirUserInputParser]
 
-  def usage, do: @usage
+  def usage(languages \\ @languages) do
+    prefix = "Usage\n\n"
+    suffix = "\nAny unrecocogised input - prints this message"
+
+    language_usages =
+      languages
+      |> Enum.map(fn language -> language.usage() end)
+      |> Enum.join("\n\n")
+
+    prefix <> language_usages <> suffix
+  end
 
   def parse(user_input, prefix) do
     user_input
@@ -28,17 +27,17 @@ defmodule PolyglotWatcher.UserInput do
 
   def determine_actions(user_input, server_state, languages \\ @languages) do
     user_input = String.trim(user_input)
-    determine(languages, user_input, server_state)
+    determine_actions(languages, user_input, server_state, languages)
   end
 
-  defp determine([], _user_input, server_state) do
-    {[{:puts, @usage}], server_state}
+  defp determine_actions([], _user_input, server_state, all_languages) do
+    {[{:puts, usage(all_languages)}], server_state}
   end
 
-  defp determine([language | rest], user_input, server_state) do
+  defp determine_actions([language | rest], user_input, server_state, all_languages) do
     case language.determine_actions(user_input, server_state) do
       {:ok, {actions, server_state}} -> {actions, server_state}
-      :error -> determine(rest, user_input, server_state)
+      :error -> determine_actions(rest, user_input, server_state, all_languages)
     end
   end
 end

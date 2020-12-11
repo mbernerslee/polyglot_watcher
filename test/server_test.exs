@@ -1,18 +1,22 @@
 defmodule PolyglotWatcher.ServerTest do
   use ExUnit.Case, async: true
   import ExUnit.CaptureIO
-  alias PolyglotWatcher.{Server, ServerStateBuilder}
+  alias PolyglotWatcher.{Server, ServerStateBuilder, UserInput}
 
   describe "start_link/1" do
     test "spawns the server process with default starting state" do
-      capture_io(fn ->
-        assert {:ok, pid} = Server.start_link([])
-        assert is_pid(pid)
+      io =
+        capture_io(fn ->
+          assert {:ok, pid} = Server.start_link([])
+          assert is_pid(pid)
 
-        assert %{watcher_pid: watcher_pid, elixir: elixir} = :sys.get_state(pid)
-        assert is_pid(watcher_pid)
-        assert %{failures: [], mode: :default} == elixir
-      end)
+          assert %{watcher_pid: watcher_pid, elixir: elixir} = :sys.get_state(pid)
+          assert is_pid(watcher_pid)
+          assert %{failures: [], mode: :default} == elixir
+        end)
+
+      assert io =~ UserInput.usage()
+      assert io =~ "Ready to go..."
     end
   end
 

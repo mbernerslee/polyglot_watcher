@@ -24,6 +24,8 @@ defmodule PolyglotWatcher.Server do
 
     FileSystem.subscribe(watcher_pid)
 
+    Puts.on_new_line(UserInput.usage())
+    Puts.on_new_line("")
     Puts.on_new_line("Ready to go...")
 
     {:ok,

@@ -1,8 +1,13 @@
 defmodule FakeLanguage.Pear do
   alias PolyglotWatcher.UserInputParser
 
+  @behaviour UserInputParser
+
   @impl UserInputParser
   def prefix, do: "pear"
+
+  @impl UserInputParser
+  def usage, do: "how to use pear"
 
   @impl UserInputParser
   def determine_actions(user_input, server_state) do
@@ -20,8 +25,13 @@ end
 defmodule FakeLanguage.Blueberry do
   alias PolyglotWatcher.UserInputParser
 
+  @behaviour UserInputParser
+
   @impl UserInputParser
   def prefix, do: "blueb"
+
+  @impl UserInputParser
+  def usage, do: "how to use blueb"
 
   @impl UserInputParser
   def determine_actions(user_input, server_state) do
@@ -63,7 +73,7 @@ defmodule PolyglotWatcher.UserInputTest do
     test "when given something that's not understood at all, prints the usage" do
       server_state = ServerStateBuilder.build()
 
-      usage = UserInput.usage()
+      usage = UserInput.usage(@fake_languages)
 
       result = UserInput.determine_actions("pear nonsense\n", server_state, @fake_languages)
       assert {[{:puts, ^usage}], ^server_state} = result
@@ -73,6 +83,18 @@ defmodule PolyglotWatcher.UserInputTest do
 
       result = UserInput.determine_actions("some nonesense\n", server_state, @fake_languages)
       assert {[{:puts, ^usage}], ^server_state} = result
+    end
+  end
+
+  describe "usage/1" do
+    test "returns the usage detailed in all language modules" do
+      usage = UserInput.usage(@fake_languages)
+
+      assert usage ==
+               "Usage\n\n" <>
+                 "how to use pear\n\n" <>
+                 "how to use blueb\n" <>
+                 "Any unrecocogised input - prints this message"
     end
   end
 

@@ -4,11 +4,23 @@ defmodule PolyglotWatcher.Elixir.UserInputParser do
   alias PolyglotWatcher.UserInputParser
 
   @behaviour UserInputParser
-  # TODO rename this to UserInputParser
+
   @prefix "ex"
 
   @impl UserInputParser
   def prefix, do: @prefix
+
+  @impl UserInputParser
+  def usage do
+    """
+    Elixir
+      #{@prefix} f                  -  fixed mode: only run the most recently run test that failed (when elixir files are saved)
+      #{@prefix} /path/to/test.exs  -  fixed mode: only run that test (when elixir files are saved)
+      #{@prefix} fa                 -  fix all mode
+      #{@prefix} d                  -  default mode: return to default elixir settings
+      #{@prefix} a                  -  run 'mix test' (run all tests)
+    """
+  end
 
   @impl UserInputParser
   def determine_actions(user_input, server_state) do

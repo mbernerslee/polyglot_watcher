@@ -56,7 +56,6 @@ defmodule PolyglotWatcher.Elixir.Actions do
     |> Language.mix_test_summary()
     |> put_summary(exit_code, current_line)
 
-    # TODO add a test that would fail if this was add instead of reset!
     {exit_code, Language.reset_mix_test_history(server_state, mix_test_output)}
   end
 
@@ -77,7 +76,6 @@ defmodule PolyglotWatcher.Elixir.Actions do
   def run_action(:mix_test_head_single, server_state) do
     case server_state.elixir.failures do
       [] ->
-        # TODO deal with this better
         Puts.on_new_line(
           "i expected there to be at least one failing test in my memory, but there were none",
           :red
@@ -91,7 +89,6 @@ defmodule PolyglotWatcher.Elixir.Actions do
     end
   end
 
-  # TODO no test goes through this codepath. add one
   def run_action(:mix_test_head_file_quietly, server_state) do
     case server_state.elixir.failures do
       [] ->
