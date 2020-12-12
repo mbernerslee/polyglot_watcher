@@ -1,13 +1,14 @@
 defmodule PolyglotWatcher do
   alias PolyglotWatcher.Server
 
-  def main(_command_line_args \\ "") do
-    run()
+  def main(command_line_args \\ []) do
+    run(command_line_args)
     :timer.sleep(:infinity)
   end
 
-  defp run do
-    children = [Server.child_spec()]
+  defp run(command_line_args) do
+    children = [Server.child_spec(command_line_args)]
     Supervisor.start_link(children, strategy: :one_for_one)
+    exit(:normal)
   end
 end

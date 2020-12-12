@@ -12,7 +12,7 @@ defmodule PolyglotWatcher.UserInput do
 
     """
 
-    suffix = "\n\nAny unrecocogised input - prints this message"
+    suffix = "\nAny unrecocogised input - prints this message\n"
 
     language_usages =
       languages
@@ -32,6 +32,34 @@ defmodule PolyglotWatcher.UserInput do
     end
   end
 
+  def determine_startup_actions(command_line_args, server_state, languages \\ @languages)
+
+  def determine_startup_actions([], server_state, _languages) do
+    {:ok, {[], server_state}}
+  end
+
+  # TODO add the concept of startup CLI options to the language module.
+  # Extend the Language behavior for this & add a function analagous to usage for startup msg, that cycles through the languages
+  # and call that instead of fudging it  like this.
+  # TODO have clearly different output for startup vs usage. rename usage to help or... modes or something
+  # TODO add a red msg at the bottom of the usage output if unexpected stuff is read
+  def determine_startup_actions(command_line_args, server_state, languages) do
+    {actions, updated_server_state} =
+      command_line_args
+      |> Enum.join(" ")
+      |> determine_actions(server_state, languages)
+
+    if {actions, updated_server_state} == unrecognised(server_state, languages) do
+      {:error,
+       {[
+          {:puts, usage(languages)},
+          {:puts, :red, "I didn't understand the command line argumenents you gave me\nExiting"}
+        ], updated_server_state}}
+    else
+      {:ok, {actions, updated_server_state}}
+    end
+  end
+
   def determine_actions(user_input, server_state, languages \\ @languages) do
     user_input = String.trim(user_input)
     determine_actions(languages, user_input, server_state, languages)
@@ -43,8 +71,12 @@ defmodule PolyglotWatcher.UserInput do
         {actions, server_state}
 
       :error ->
-        {[{:puts, usage(all_languages)}], server_state}
+        unrecognised(server_state, all_languages)
     end
+  end
+
+  defp unrecognised(server_state, languages \\ @languages) do
+    {[{:puts, usage(languages)}], server_state}
   end
 
   defp determine_actions([language | rest], user_input, server_state, all_languages) do

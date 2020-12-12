@@ -3,11 +3,11 @@ defmodule PolyglotWatcher.ServerTest do
   import ExUnit.CaptureIO
   alias PolyglotWatcher.{Server, ServerStateBuilder, UserInput}
 
-  describe "start_link/1" do
-    test "spawns the server process with default starting state" do
+  describe "start_link/2" do
+    test "with no command line args given, spawns the server process with default starting state" do
       io =
         capture_io(fn ->
-          assert {:ok, pid} = Server.start_link([])
+          assert {:ok, pid} = Server.start_link([], [])
           assert is_pid(pid)
 
           assert %{watcher_pid: watcher_pid, elixir: elixir} = :sys.get_state(pid)
@@ -18,11 +18,18 @@ defmodule PolyglotWatcher.ServerTest do
       assert io =~ UserInput.usage()
       assert io =~ "Ready to go..."
     end
+
+    test "with invalid command line args given, puts the usage and exits" do
+      {:error, :bad_cli_args} = Server.start_link(["nonsense"], [])
+    end
   end
 
   describe "child_spec/0" do
     test "returns the default genserver options" do
-      assert Server.child_spec() == %{id: Server, start: {Server, :start_link, [[name: :server]]}}
+      assert Server.child_spec() == %{
+               id: Server,
+               start: {Server, :start_link, [[], [name: :server]]}
+             }
     end
   end
 

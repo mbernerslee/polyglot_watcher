@@ -6,34 +6,42 @@ defmodule PolyglotWatcher.Server do
 
   @default_options [name: @process_name]
 
-  def child_spec do
+  @initial_state %{
+    ignore_file_changes: false,
+    elixir: %{mode: :default, failures: []}
+  }
+
+  def child_spec(command_line_args \\ []) do
     %{
       id: __MODULE__,
-      start: {__MODULE__, :start_link, [@default_options]}
+      start: {__MODULE__, :start_link, [command_line_args, @default_options]}
     }
   end
 
-  def start_link(genserver_options \\ @default_options) do
-    GenServer.start_link(__MODULE__, [], genserver_options)
+  def start_link(command_line_args \\ [], genserver_options \\ @default_options) do
+    GenServer.start_link(__MODULE__, command_line_args, genserver_options)
   end
 
   @impl true
-  def init(_) do
-    listen_for_user_input()
-    {:ok, watcher_pid} = FileSystem.start_link(dirs: ["."])
+  def init(command_line_args) do
+    case UserInput.determine_startup_actions(command_line_args, @initial_state) do
+      {:ok, {actions, server_state}} ->
+        {:ok, watcher_pid} = FileSystem.start_link(dirs: ["."])
+        FileSystem.subscribe(watcher_pid)
+        Puts.on_new_line(UserInput.usage())
 
-    FileSystem.subscribe(watcher_pid)
+        server_state =
+          Executor.run_actions({actions, server_state})
+          |> IO.inspect()
 
-    Puts.on_new_line(UserInput.usage())
-    Puts.on_new_line("")
-    Puts.on_new_line("Ready to go...")
+        listen_for_user_input()
 
-    {:ok,
-     %{
-       watcher_pid: watcher_pid,
-       ignore_file_changes: false,
-       elixir: %{mode: :default, failures: []}
-     }}
+        {:ok, Map.put(server_state, :watcher_pid, watcher_pid)}
+
+      {:error, {actions, server_state}} ->
+        Executor.run_actions({actions, server_state})
+        :ignore
+    end
   end
 
   @impl true
