@@ -13,6 +13,10 @@ defmodule PolyglotWatcher.MixProject do
     ]
   end
 
+  #def application do
+  #  [extra_applications: [:ex_ncurses]]
+  #end
+
   defp elixirc_paths(:test) do
     ["lib", "test/builders"]
   end
@@ -21,10 +25,10 @@ defmodule PolyglotWatcher.MixProject do
     ["lib"]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:file_system, "~> 0.2"}
+      {:file_system, "~> 0.2"},
+      {:ex_ncurses, "~> 0.3"}
     ]
   end
 end

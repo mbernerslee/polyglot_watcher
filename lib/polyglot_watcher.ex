@@ -7,6 +7,7 @@ defmodule PolyglotWatcher do
   end
 
   defp run do
+    #Application.ensure_started(:ex_ncurses)
     children = [Server.child_spec()]
     Supervisor.start_link(children, strategy: :one_for_one)
   end

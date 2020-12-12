@@ -28,6 +28,9 @@ defmodule PolyglotWatcher.Server do
     Puts.on_new_line("")
     Puts.on_new_line("Ready to go...")
 
+    # ExNcurses.initscr()
+    # ExNcurses.listen()
+
     {:ok,
      %{
        watcher_pid: watcher_pid,
