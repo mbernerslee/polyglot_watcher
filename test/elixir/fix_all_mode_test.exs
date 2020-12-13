@@ -23,6 +23,7 @@ defmodule PolyglotWatcher.Elixir.FixAllModeTest do
              } = actions
 
       assert explanation == [
+               {:run_sys_cmd, "tput", ["reset"]},
                {:puts, "Switching to fix all mode"},
                {:puts, "It'll run: "},
                {:puts, "1) 'mix test' ...if this passes we're good!...otherwise go to 2)"},

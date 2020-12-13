@@ -17,6 +17,7 @@ defmodule PolyglotWatcher.ExampleLanguages.Pear.UserInputParser do
     |> case do
       ["pick"] -> {:ok, {[{:puts, "pick"}], Map.put(server_state, :pick, true)}}
       ["eat"] -> {:ok, {[{:puts, "eat"}], Map.put(server_state, :eat, true)}}
+      ["peel"] -> {:ok, {%{run: [{:puts, "peel"}]}, Map.put(server_state, :peel, true)}}
       _ -> :error
     end
   end

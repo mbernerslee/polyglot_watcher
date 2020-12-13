@@ -12,7 +12,7 @@ defmodule PolyglotWatcher.UserInputTest do
       server_state = ServerStateBuilder.without_watcher_pid(ServerStateBuilder.build())
 
       assert {:ok,
-              {[{:run_sys_cmd, "tput", ["reset"]}, {:puts, "Watching in default mode..."}],
+              {[{:run_sys_cmd, "tput", ["reset"]}, _, {:puts, "Watching in default mode..."}],
                ^server_state}} =
                UserInput.determine_startup_actions([], server_state, @fake_languages)
     end
@@ -20,7 +20,36 @@ defmodule PolyglotWatcher.UserInputTest do
     test "with recognised CLI args" do
       server_state = ServerStateBuilder.without_watcher_pid(ServerStateBuilder.build())
 
-      assert {:ok, {[{:run_sys_cmd, "tput", ["reset"]}, {:puts, "eat"}], updated_server_state}} =
+      assert {:ok,
+              {[
+                 {:run_sys_cmd, "tput", ["reset"]},
+                 {:puts,
+                  [
+                    white: "type ",
+                    cyan: "help",
+                    white:
+                      " into this terminal to see a list of options and how to change watcher modes as I run"
+                  ]},
+                 {:puts, "eat"}
+               ],
+               updated_server_state}} =
+               UserInput.determine_startup_actions(["pear", "eat"], server_state, @fake_languages)
+
+      assert Map.put(server_state, :eat, true) == updated_server_state
+
+      assert {:ok,
+              {[
+                 {:run_sys_cmd, "tput", ["reset"]},
+                 {:puts,
+                  [
+                    white: "type ",
+                    cyan: "help",
+                    white:
+                      " into this terminal to see a list of options and how to change watcher modes as I run"
+                  ]},
+                 {:puts, "eat"}
+               ],
+               updated_server_state}} =
                UserInput.determine_startup_actions(["pear", "eat"], server_state, @fake_languages)
 
       assert Map.put(server_state, :eat, true) == updated_server_state

@@ -3,6 +3,17 @@ defmodule PolyglotWatcher.UserInput do
 
   @languages [ElixirUserInputParser]
 
+  @startup_actions [
+    {:run_sys_cmd, "tput", ["reset"]},
+    {:puts,
+     [
+       {:white, "type "},
+       {:cyan, "help"},
+       {:white,
+        " into this terminal to see a list of options and how to change watcher modes as I run"}
+     ]}
+  ]
+
   def usage(languages \\ @languages) do
     [
       {:white, "Usage\n\n"},
@@ -43,11 +54,7 @@ defmodule PolyglotWatcher.UserInput do
   def determine_startup_actions(command_line_args, server_state, languages \\ @languages)
 
   def determine_startup_actions([], server_state, _languages) do
-    {:ok,
-     {[
-        {:run_sys_cmd, "tput", ["reset"]},
-        {:puts, "Watching in default mode..."}
-      ], server_state}}
+    {:ok, {prepend_startup_actions([{:puts, "Watching in default mode..."}]), server_state}}
   end
 
   def determine_startup_actions(command_line_args, server_state, languages) do
@@ -59,14 +66,21 @@ defmodule PolyglotWatcher.UserInput do
     if {actions, updated_server_state} == unrecognised(server_state, languages) do
       {:error, {bad_cli_args_actions(command_line_args, languages), updated_server_state}}
     else
-      actions = [{:run_sys_cmd, "tput", ["reset"]}] ++ actions
-      {:ok, {actions, updated_server_state}}
+      {:ok, {prepend_startup_actions(actions), updated_server_state}}
     end
   end
 
   def determine_actions(user_input, server_state, languages \\ @languages) do
     user_input = String.trim(user_input)
     determine_actions(languages, user_input, server_state, languages)
+  end
+
+  defp prepend_startup_actions(actions) when is_list(actions) do
+    @startup_actions ++ actions
+  end
+
+  defp prepend_startup_actions(%{run: run} = actions) do
+    %{actions | run: @startup_actions ++ run}
   end
 
   defp determine_actions([], user_input, server_state, all_languages) do
