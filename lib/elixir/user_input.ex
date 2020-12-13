@@ -1,19 +1,19 @@
-defmodule PolyglotWatcher.Elixir.UserInputParser do
+defmodule PolyglotWatcher.Elixir.UserInput do
   alias PolyglotWatcher.Elixir.{Actions, Language, FixAllMode, Usage}
+  alias PolyglotWatcher.UserInputBehaviour
   alias PolyglotWatcher.UserInput
-  alias PolyglotWatcher.UserInputParser
 
-  @behaviour UserInputParser
+  @behaviour UserInputBehaviour
 
   @prefix "ex"
 
-  @impl UserInputParser
+  @impl UserInputBehaviour
   def prefix, do: @prefix
 
-  @impl UserInputParser
+  @impl UserInputBehaviour
   defdelegate usage, to: Usage
 
-  @impl UserInputParser
+  @impl UserInputBehaviour
   def determine_actions(user_input, server_state) do
     user_input
     |> UserInput.parse(@prefix)

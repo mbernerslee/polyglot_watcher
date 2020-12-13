@@ -1,24 +1,26 @@
 defmodule PolyglotWatcher.UserInputTest do
   use ExUnit.Case, async: true
   alias PolyglotWatcher.{ServerStateBuilder, UserInput}
-  alias FakeLanguage.{Pear, Blueberry}
-  alias PolyglotWatcher.ExampleLanguages.Blueberry.UserInputParser, as: Blueberry
-  alias PolyglotWatcher.ExampleLanguages.Pear.UserInputParser, as: Pear
+  alias PolyglotWatcher.ExampleLanguages.{Pear, Blueberry}
 
-  @fake_languages [Pear, Blueberry]
+  @languages [Pear, Blueberry]
 
-  describe "determine_startup_actions/3" do
-    test "with no CLI args" do
+  describe "startup/3" do
+    test "with no CLI args, puts the language modules starting state in the server state" do
       server_state = ServerStateBuilder.without_watcher_pid(ServerStateBuilder.build())
 
       assert {:ok,
               {[{:run_sys_cmd, "tput", ["reset"]}, _, {:puts, "Watching in default mode..."}],
-               ^server_state}} =
-               UserInput.determine_startup_actions([], server_state, @fake_languages)
+               server_state}} = UserInput.startup([], server_state, @languages)
+
+      assert server_state.pear == elem(Pear.Language.starting_state(), 1)
     end
 
     test "with recognised CLI args" do
-      server_state = ServerStateBuilder.without_watcher_pid(ServerStateBuilder.build())
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.without_watcher_pid()
+        |> ServerStateBuilder.without_elixir()
 
       assert {:ok,
               {[
@@ -33,30 +35,21 @@ defmodule PolyglotWatcher.UserInputTest do
                  {:puts, "eat"}
                ],
                updated_server_state}} =
-               UserInput.determine_startup_actions(["pear", "eat"], server_state, @fake_languages)
+               UserInput.startup(["pear", "eat"], server_state, @languages)
 
-      assert Map.put(server_state, :eat, true) == updated_server_state
+      assert %{pear: %{eat: true}} = updated_server_state
 
-      assert {:ok,
-              {[
-                 {:run_sys_cmd, "tput", ["reset"]},
-                 {:puts,
-                  [
-                    white: "type ",
-                    cyan: "help",
-                    white:
-                      " into this terminal to see a list of options and how to change watcher modes as I run"
-                  ]},
-                 {:puts, "eat"}
-               ],
-               updated_server_state}} =
-               UserInput.determine_startup_actions(["pear", "eat"], server_state, @fake_languages)
+      assert {:ok, {%{run: [_, _, {:puts, "peel"}]}, updated_server_state}} =
+               UserInput.startup(["pear", "peel"], server_state, @languages)
 
-      assert Map.put(server_state, :eat, true) == updated_server_state
+      assert %{pear: %{peel: true}} = updated_server_state
     end
 
     test "with unrecognised CLI args" do
-      server_state = ServerStateBuilder.without_watcher_pid(ServerStateBuilder.build())
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.without_watcher_pid()
+        |> ServerStateBuilder.without_elixir()
 
       assert {:error,
               {[
@@ -69,55 +62,56 @@ defmodule PolyglotWatcher.UserInputTest do
                     {:red, "I didn't understand the command line arguments 'nonsense'\n"},
                     {:red, "The supported arguments are listed above\n\n"}
                   ]}
-               ],
-               ^server_state}} =
-               UserInput.determine_startup_actions(["nonsense"], server_state, @fake_languages)
+               ], _}} = UserInput.startup(["nonsense"], server_state, @languages)
     end
   end
 
   describe "determine_actions/3" do
     test "when given language user_input modules, returns any actions from them which can be determined" do
-      server_state = ServerStateBuilder.build()
+      server_state =
+        ServerStateBuilder.build()
+        |> ServerStateBuilder.without_elixir()
+        |> ServerStateBuilder.with_languages(@languages)
 
-      result = UserInput.determine_actions("pear pick\n", server_state, @fake_languages)
-      assert {[{:puts, "pick"}], %{pick: true}} = result
+      result = UserInput.determine_actions("pear pick\n", server_state, @languages)
+      assert {[{:puts, "pick"}], %{pear: %{pick: true}}} = result
 
-      result = UserInput.determine_actions("blueb harvest\n", server_state, @fake_languages)
-      assert {[{:puts, "harvest"}], %{harvest: true}} = result
+      result = UserInput.determine_actions("blueb harvest\n", server_state, @languages)
+      assert {[{:puts, "harvest"}], %{blueb: %{harvest: true}}} = result
 
-      result = UserInput.determine_actions("pear eat\n", server_state, @fake_languages)
-      assert {[{:puts, "eat"}], %{eat: true}} = result
+      result = UserInput.determine_actions("pear eat\n", server_state, @languages)
+      assert {[{:puts, "eat"}], %{pear: %{eat: true}}} = result
 
-      result = UserInput.determine_actions("blueb nom\n", server_state, @fake_languages)
-      assert {[{:puts, "nom"}], %{nom: true}} = result
+      result = UserInput.determine_actions("blueb nom\n", server_state, @languages)
+      assert {[{:puts, "nom"}], %{blueb: %{nom: true}}} = result
     end
 
     test "given language agnostic input commands" do
       server_state = ServerStateBuilder.build()
 
-      result = UserInput.determine_actions("c\n", server_state, @fake_languages)
+      result = UserInput.determine_actions("c\n", server_state, @languages)
       assert {[{:run_sys_cmd, "tput", ["reset"]}], ^server_state} = result
     end
 
     test "when given something that's not understood at all, prints the usage" do
       server_state = ServerStateBuilder.build()
 
-      usage = UserInput.usage(@fake_languages)
+      usage = UserInput.usage(@languages)
 
-      result = UserInput.determine_actions("pear nonsense\n", server_state, @fake_languages)
+      result = UserInput.determine_actions("pear nonsense\n", server_state, @languages)
       assert {[{:puts, ^usage}], ^server_state} = result
 
-      result = UserInput.determine_actions("blueb nonsense\n", server_state, @fake_languages)
+      result = UserInput.determine_actions("blueb nonsense\n", server_state, @languages)
       assert {[{:puts, ^usage}], ^server_state} = result
 
-      result = UserInput.determine_actions("some nonesense\n", server_state, @fake_languages)
+      result = UserInput.determine_actions("some nonesense\n", server_state, @languages)
       assert {[{:puts, ^usage}], ^server_state} = result
     end
   end
 
   describe "usage/1" do
     test "returns the usage detailed in all language modules" do
-      usage = UserInput.usage(@fake_languages)
+      usage = UserInput.usage(@languages)
 
       assert usage == [
                {:white, "Usage\n\n"},

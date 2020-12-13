@@ -1,7 +1,7 @@
 defmodule PolyglotWatcher.Elixir.Language do
-  alias PolyglotWatcher.Language
+  alias PolyglotWatcher.LanguageBehaviour
   alias PolyglotWatcher.Elixir.{Actions, FixAllMode}
-  @behaviour Language
+  @behaviour LanguageBehaviour
 
   @ex ".ex"
   @exs ".exs"
@@ -10,12 +10,17 @@ defmodule PolyglotWatcher.Elixir.Language do
   def ex, do: @ex
   def exs, do: @exs
 
-  @impl Language
+  @impl LanguageBehaviour
   def file_extensions do
     [@ex, @exs]
   end
 
-  @impl Language
+  @impl LanguageBehaviour
+  def starting_state do
+    {:elixir, %{mode: :default, failures: []}}
+  end
+
+  @impl LanguageBehaviour
   def determine_actions(file, server_state) do
     case mode(server_state) do
       {:fixed_previous, test_path} ->

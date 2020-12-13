@@ -2,14 +2,14 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
   use ExUnit.Case, async: true
   alias PolyglotWatcher.ServerStateBuilder
   alias PolyglotWatcher.Elixir.Actions
-  alias PolyglotWatcher.Elixir.UserInputParser
+  alias PolyglotWatcher.Elixir.UserInput
 
   describe "determine_actions/2 - fix all mode" do
     test "can change the server state to fix all mode" do
       server_state = ServerStateBuilder.build()
 
       assert {:ok, {actions, server_state}} =
-               UserInputParser.determine_actions("ex fa\n", server_state)
+               UserInput.determine_actions("ex fa\n", server_state)
 
       assert %{elixir: %{mode: {:fix_all, :mix_test}}} = server_state
 
@@ -31,7 +31,7 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
         |> ServerStateBuilder.with_elixir_fixed_previous_mode()
 
       assert {:ok, {actions, new_server_state}} =
-               UserInputParser.determine_actions("ex d\n", server_state)
+               UserInput.determine_actions("ex d\n", server_state)
 
       [{:run_sys_cmd, "tput", ["reset"]}, {:puts, echo}] = actions
 
@@ -46,7 +46,7 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
       server_state = ServerStateBuilder.build()
 
       assert {:ok, {actions, new_server_state}} =
-               UserInputParser.determine_actions("ex a\n", server_state)
+               UserInput.determine_actions("ex a\n", server_state)
 
       [{:puts, echo}, {:module_action, _, :mix_test}] = actions
 
@@ -61,7 +61,7 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
       server_state = ServerStateBuilder.build()
 
       assert {:ok, {actions, new_server_state}} =
-               UserInputParser.determine_actions("ex test/example_test.exs:9\n", server_state)
+               UserInput.determine_actions("ex test/example_test.exs:9\n", server_state)
 
       [
         {:run_sys_cmd, "tput", ["reset"]},
@@ -86,7 +86,7 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
     test "stays in previous mode given janky user_input & returns the usage instructions" do
       server_state = ServerStateBuilder.build()
 
-      assert :error == UserInputParser.determine_actions("ex total_jank\n", server_state)
+      assert :error == UserInput.determine_actions("ex total_jank\n", server_state)
     end
   end
 
@@ -97,7 +97,7 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
         |> ServerStateBuilder.with_elixir_failures(["test/path_test.exs:10"])
 
       assert {:ok, {actions, new_server_state}} =
-               UserInputParser.determine_actions("ex f\n", server_state)
+               UserInput.determine_actions("ex f\n", server_state)
 
       [
         {:run_sys_cmd, "tput", ["reset"]},
@@ -120,7 +120,7 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
         |> ServerStateBuilder.with_elixir_failures([])
 
       assert {:ok, {actions, new_server_state}} =
-               UserInputParser.determine_actions("ex f\n", server_state)
+               UserInput.determine_actions("ex f\n", server_state)
 
       [
         {:puts, :red, first_echo},

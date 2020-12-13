@@ -6,10 +6,7 @@ defmodule PolyglotWatcher.Server do
 
   @default_options [name: @process_name]
 
-  @initial_state %{
-    ignore_file_changes: false,
-    elixir: %{mode: :default, failures: []}
-  }
+  @initial_state %{ignore_file_changes: false}
 
   def child_spec(command_line_args \\ []) do
     %{
@@ -24,7 +21,7 @@ defmodule PolyglotWatcher.Server do
 
   @impl true
   def init(command_line_args) do
-    case UserInput.determine_startup_actions(command_line_args, @initial_state) do
+    case UserInput.startup(command_line_args, @initial_state) do
       {:ok, {actions, server_state}} ->
         {:ok, watcher_pid} = FileSystem.start_link(dirs: ["."])
         FileSystem.subscribe(watcher_pid)
