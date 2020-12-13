@@ -1,6 +1,6 @@
 defmodule PolyglotWatcher.Server do
   use GenServer
-  alias PolyglotWatcher.{Executor, Languages, UserInput, FileSystemChange, Puts}
+  alias PolyglotWatcher.{Executor, Languages, UserInput, FileSystemChange}
 
   @process_name :server
 
@@ -28,19 +28,16 @@ defmodule PolyglotWatcher.Server do
       {:ok, {actions, server_state}} ->
         {:ok, watcher_pid} = FileSystem.start_link(dirs: ["."])
         FileSystem.subscribe(watcher_pid)
-        Puts.on_new_line(UserInput.usage())
 
-        server_state =
-          Executor.run_actions({actions, server_state})
-          |> IO.inspect()
+        server_state = Map.put(server_state, :watcher_pid, watcher_pid)
+        server_state = Executor.run_actions({actions, server_state})
 
         listen_for_user_input()
-
-        {:ok, Map.put(server_state, :watcher_pid, watcher_pid)}
+        {:ok, server_state}
 
       {:error, {actions, server_state}} ->
         Executor.run_actions({actions, server_state})
-        :ignore
+        {:stop, :normal}
     end
   end
 

@@ -88,6 +88,10 @@ defmodule PolyglotWatcher.Executor.Real do
     {System.cmd(cmd, args, into: IO.stream(:stdio, :line)), server_state}
   end
 
+  defp run_action({:puts, messages}, server_state) when is_list(messages) do
+    {Puts.on_new_line(messages), server_state}
+  end
+
   defp run_action({:puts, message}, server_state) do
     {Puts.on_new_line(message, :magenta), server_state}
   end

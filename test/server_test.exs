@@ -1,26 +1,22 @@
 defmodule PolyglotWatcher.ServerTest do
   use ExUnit.Case, async: true
   import ExUnit.CaptureIO
-  alias PolyglotWatcher.{Server, ServerStateBuilder, UserInput}
+  alias PolyglotWatcher.{Server, ServerStateBuilder}
 
   describe "start_link/2" do
     test "with no command line args given, spawns the server process with default starting state" do
-      io =
-        capture_io(fn ->
-          assert {:ok, pid} = Server.start_link([], [])
-          assert is_pid(pid)
+      capture_io(fn ->
+        assert {:ok, pid} = Server.start_link([], [])
+        assert is_pid(pid)
 
-          assert %{watcher_pid: watcher_pid, elixir: elixir} = :sys.get_state(pid)
-          assert is_pid(watcher_pid)
-          assert %{failures: [], mode: :default} == elixir
-        end)
-
-      assert io =~ UserInput.usage()
-      assert io =~ "Ready to go..."
+        assert %{watcher_pid: watcher_pid, elixir: elixir} = :sys.get_state(pid)
+        assert is_pid(watcher_pid)
+        assert %{failures: [], mode: :default} == elixir
+      end)
     end
 
-    test "with invalid command line args given, puts the usage and exits" do
-      {:error, :bad_cli_args} = Server.start_link(["nonsense"], [])
+    test "with invalid command line args given, exits" do
+      assert {:error, :normal} == Server.start_link(["nonsense"], [])
     end
   end
 

@@ -4,22 +4,30 @@ defmodule PolyglotWatcher.UserInput do
   @languages [ElixirUserInputParser]
 
   def usage(languages \\ @languages) do
-    prefix = """
-    Usage
+    [
+      {:white, "Usage\n\n"},
+      {:yellow, "# General\n"},
+      {:white, "  • "},
+      {:cyan, "c"},
+      {:white, "  clears the screen\n"},
+      {:white, "  • "},
+      {:cyan, "any unrecognised input"},
+      {:white, "  prints this message"},
+      {:white, "\n\n"}
+    ] ++
+      Enum.flat_map(languages, fn language -> language.usage() end)
+  end
 
-    General
-      c - clears the screen
+  defp bad_cli_args_actions(command_line_args, languages) do
+    messages =
+      Enum.flat_map(languages, fn language -> language.usage() end) ++
+        [
+          {:white, "\n"},
+          {:red, "I didn't understand the command line arguments '#{command_line_args}'\n"},
+          {:red, "The supported arguments are listed above\n\n"}
+        ]
 
-    """
-
-    suffix = "\nAny unrecocogised input - prints this message\n"
-
-    language_usages =
-      languages
-      |> Enum.map(fn language -> language.usage() end)
-      |> Enum.join("\n\n")
-
-    prefix <> language_usages <> suffix
+    [{:run_sys_cmd, "tput", ["reset"]}, {:puts, messages}]
   end
 
   def parse(user_input, prefix) do
@@ -35,14 +43,13 @@ defmodule PolyglotWatcher.UserInput do
   def determine_startup_actions(command_line_args, server_state, languages \\ @languages)
 
   def determine_startup_actions([], server_state, _languages) do
-    {:ok, {[], server_state}}
+    {:ok,
+     {[
+        {:run_sys_cmd, "tput", ["reset"]},
+        {:puts, "Watching in default mode..."}
+      ], server_state}}
   end
 
-  # TODO add the concept of startup CLI options to the language module.
-  # Extend the Language behavior for this & add a function analagous to usage for startup msg, that cycles through the languages
-  # and call that instead of fudging it  like this.
-  # TODO have clearly different output for startup vs usage. rename usage to help or... modes or something
-  # TODO add a red msg at the bottom of the usage output if unexpected stuff is read
   def determine_startup_actions(command_line_args, server_state, languages) do
     {actions, updated_server_state} =
       command_line_args
@@ -50,12 +57,9 @@ defmodule PolyglotWatcher.UserInput do
       |> determine_actions(server_state, languages)
 
     if {actions, updated_server_state} == unrecognised(server_state, languages) do
-      {:error,
-       {[
-          {:puts, usage(languages)},
-          {:puts, :red, "I didn't understand the command line argumenents you gave me\nExiting"}
-        ], updated_server_state}}
+      {:error, {bad_cli_args_actions(command_line_args, languages), updated_server_state}}
     else
+      actions = [{:run_sys_cmd, "tput", ["reset"]}] ++ actions
       {:ok, {actions, updated_server_state}}
     end
   end
@@ -75,15 +79,15 @@ defmodule PolyglotWatcher.UserInput do
     end
   end
 
-  defp unrecognised(server_state, languages \\ @languages) do
-    {[{:puts, usage(languages)}], server_state}
-  end
-
   defp determine_actions([language | rest], user_input, server_state, all_languages) do
     case language.determine_actions(user_input, server_state) do
       {:ok, {actions, server_state}} -> {actions, server_state}
       :error -> determine_actions(rest, user_input, server_state, all_languages)
     end
+  end
+
+  defp unrecognised(server_state, languages) do
+    {[{:puts, usage(languages)}], server_state}
   end
 
   defp language_agnostic_actions do

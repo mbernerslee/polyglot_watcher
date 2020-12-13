@@ -33,9 +33,9 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
       assert {:ok, {actions, new_server_state}} =
                UserInputParser.determine_actions("ex d\n", server_state)
 
-      [{:puts, echo}] = actions
+      [{:run_sys_cmd, "tput", ["reset"]}, {:puts, echo}] = actions
 
-      assert echo =~ "Switching back to default mode"
+      assert echo =~ "Switching to default mode"
 
       assert %{elixir: %{mode: :default}} = new_server_state
     end
@@ -64,6 +64,7 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
                UserInputParser.determine_actions("ex test/example_test.exs:9\n", server_state)
 
       [
+        {:run_sys_cmd, "tput", ["reset"]},
         {:puts, first_echo},
         {:puts, second_echo},
         {:puts, third_echo},
@@ -72,7 +73,7 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
 
       assert Actions.mix_test("test/example_test.exs:9") == mix_test
 
-      assert first_echo =~ "Switching to fixed file mode"
+      assert first_echo =~ "Switching to fixed mode"
 
       assert second_echo =~
                "I'll only run 'mix test test/example_test.exs:9' unless told otherwise"
@@ -99,6 +100,7 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
                UserInputParser.determine_actions("ex f\n", server_state)
 
       [
+        {:run_sys_cmd, "tput", ["reset"]},
         {:puts, first_echo},
         {:puts, second_echo},
         {:puts, third_echo},
@@ -106,7 +108,7 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
       ] = actions
 
       assert first_echo =~ "Switching to fixed mode"
-      assert second_echo =~ "Will only run 'mix test test/path_test.exs:10' unless told otherwise"
+      assert second_echo =~ "I'll only run 'mix test test/path_test.exs:10' unless told otherwise"
       assert third_echo =~ "Return to default mode by entering 'ex d'"
 
       assert %{elixir: %{mode: :fixed_previous}} = new_server_state

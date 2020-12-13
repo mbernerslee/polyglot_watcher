@@ -1,57 +1,50 @@
-defmodule FakeLanguage.Pear do
-  alias PolyglotWatcher.UserInputParser
-
-  @behaviour UserInputParser
-
-  @impl UserInputParser
-  def prefix, do: "pear"
-
-  @impl UserInputParser
-  def usage, do: "how to use pear"
-
-  @impl UserInputParser
-  def determine_actions(user_input, server_state) do
-    user_input
-    |> String.split(prefix(), trim: true)
-    |> Enum.map(&String.trim/1)
-    |> case do
-      ["pick"] -> {:ok, {[{:puts, "pick"}], Map.put(server_state, :pick, true)}}
-      ["eat"] -> {:ok, {[{:puts, "eat"}], Map.put(server_state, :eat, true)}}
-      _ -> :error
-    end
-  end
-end
-
-defmodule FakeLanguage.Blueberry do
-  alias PolyglotWatcher.UserInputParser
-
-  @behaviour UserInputParser
-
-  @impl UserInputParser
-  def prefix, do: "blueb"
-
-  @impl UserInputParser
-  def usage, do: "how to use blueb"
-
-  @impl UserInputParser
-  def determine_actions(user_input, server_state) do
-    user_input
-    |> String.split(prefix(), trim: true)
-    |> Enum.map(&String.trim/1)
-    |> case do
-      ["harvest"] -> {:ok, {[{:puts, "harvest"}], Map.put(server_state, :harvest, true)}}
-      ["nom"] -> {:ok, {[{:puts, "nom"}], Map.put(server_state, :nom, true)}}
-      _ -> :error
-    end
-  end
-end
-
 defmodule PolyglotWatcher.UserInputTest do
   use ExUnit.Case, async: true
   alias PolyglotWatcher.{ServerStateBuilder, UserInput}
   alias FakeLanguage.{Pear, Blueberry}
+  alias PolyglotWatcher.ExampleLanguages.Blueberry.UserInputParser, as: Blueberry
+  alias PolyglotWatcher.ExampleLanguages.Pear.UserInputParser, as: Pear
 
   @fake_languages [Pear, Blueberry]
+
+  describe "determine_startup_actions/3" do
+    test "with no CLI args" do
+      server_state = ServerStateBuilder.without_watcher_pid(ServerStateBuilder.build())
+
+      assert {:ok,
+              {[{:run_sys_cmd, "tput", ["reset"]}, {:puts, "Watching in default mode..."}],
+               ^server_state}} =
+               UserInput.determine_startup_actions([], server_state, @fake_languages)
+    end
+
+    test "with recognised CLI args" do
+      server_state = ServerStateBuilder.without_watcher_pid(ServerStateBuilder.build())
+
+      assert {:ok, {[{:run_sys_cmd, "tput", ["reset"]}, {:puts, "eat"}], updated_server_state}} =
+               UserInput.determine_startup_actions(["pear", "eat"], server_state, @fake_languages)
+
+      assert Map.put(server_state, :eat, true) == updated_server_state
+    end
+
+    test "with unrecognised CLI args" do
+      server_state = ServerStateBuilder.without_watcher_pid(ServerStateBuilder.build())
+
+      assert {:error,
+              {[
+                 {:run_sys_cmd, "tput", ["reset"]},
+                 {:puts,
+                  [
+                    {:green, "how to use pear"},
+                    {:red, "how to use blueb"},
+                    {:white, "\n"},
+                    {:red, "I didn't understand the command line arguments 'nonsense'\n"},
+                    {:red, "The supported arguments are listed above\n\n"}
+                  ]}
+               ],
+               ^server_state}} =
+               UserInput.determine_startup_actions(["nonsense"], server_state, @fake_languages)
+    end
+  end
 
   describe "determine_actions/3" do
     test "when given language user_input modules, returns any actions from them which can be determined" do
@@ -97,13 +90,19 @@ defmodule PolyglotWatcher.UserInputTest do
     test "returns the usage detailed in all language modules" do
       usage = UserInput.usage(@fake_languages)
 
-      assert usage ==
-               "Usage\n\n" <>
-                 "General\n" <>
-                 "  c - clears the screen\n\n" <>
-                 "how to use pear\n\n" <>
-                 "how to use blueb\n\n" <>
-                 "Any unrecocogised input - prints this message"
+      assert usage == [
+               {:white, "Usage\n\n"},
+               {:yellow, "# General\n"},
+               {:white, "  • "},
+               {:cyan, "c"},
+               {:white, "  clears the screen\n"},
+               {:white, "  • "},
+               {:cyan, "any unrecognised input"},
+               {:white, "  prints this message"},
+               {:white, "\n\n"},
+               {:green, "how to use pear"},
+               {:red, "how to use blueb"}
+             ]
     end
   end
 

@@ -3,6 +3,10 @@ defmodule PolyglotWatcher.ServerStateBuilder do
     %{watcher_pid: :watcher_pid, elixir: %{mode: :default, failures: []}}
   end
 
+  def without_watcher_pid(server_state) do
+    Map.delete(server_state, :watcher_pid)
+  end
+
   def with_elixir_fixed_previous_mode(server_state) do
     put_in(server_state, [:elixir, :mode], :fixed_previous)
   end

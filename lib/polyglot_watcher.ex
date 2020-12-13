@@ -9,6 +9,5 @@ defmodule PolyglotWatcher do
   defp run(command_line_args) do
     children = [Server.child_spec(command_line_args)]
     Supervisor.start_link(children, strategy: :one_for_one)
-    exit(:normal)
   end
 end

@@ -1,5 +1,5 @@
 defmodule PolyglotWatcher.Elixir.UserInputParser do
-  alias PolyglotWatcher.Elixir.{Actions, Language, FixAllMode}
+  alias PolyglotWatcher.Elixir.{Actions, Language, FixAllMode, Usage}
   alias PolyglotWatcher.UserInput
   alias PolyglotWatcher.UserInputParser
 
@@ -11,16 +11,7 @@ defmodule PolyglotWatcher.Elixir.UserInputParser do
   def prefix, do: @prefix
 
   @impl UserInputParser
-  def usage do
-    """
-    Elixir
-      #{@prefix} f                  -  fixed mode: only run the most recently run test that failed (when elixir files are saved)
-      #{@prefix} /path/to/test.exs  -  fixed mode: only run that test (when elixir files are saved)
-      #{@prefix} fa                 -  fix all mode
-      #{@prefix} d                  -  default mode: return to default elixir settings
-      #{@prefix} a                  -  run 'mix test' (run all tests)
-    """
-  end
+  defdelegate usage, to: Usage
 
   @impl UserInputParser
   def determine_actions(user_input, server_state) do
@@ -41,12 +32,8 @@ defmodule PolyglotWatcher.Elixir.UserInputParser do
   defp fallback({:error, possible_file_path}, server_state) do
     if legit_looking_test_file?(possible_file_path) do
       {:ok,
-       {[
-          {:puts, "Switching to fixed file mode"},
-          {:puts, "I'll only run 'mix test #{possible_file_path}' unless told otherwise"},
-          {:puts, "Return to default mode by entering 'ex d'"},
-          Actions.mix_test(possible_file_path)
-        ], put_in(server_state, [:elixir, :mode], {:fixed_file, possible_file_path})}}
+       {fixed_previous_mode_actions(possible_file_path),
+        put_in(server_state, [:elixir, :mode], {:fixed_file, possible_file_path})}}
     else
       :error
     end
@@ -76,15 +63,21 @@ defmodule PolyglotWatcher.Elixir.UserInputParser do
     Regex.match?(~r|^test/.+_test.exs.*|, file_path)
   end
 
+  defp fixed_previous_mode_actions(test_path) do
+    [
+      {:run_sys_cmd, "tput", ["reset"]},
+      {:puts, "Switching to fixed mode"},
+      {:puts, "I'll only run 'mix test #{test_path}' unless told otherwise"},
+      {:puts, "Return to default mode by entering 'ex d'"},
+      Actions.mix_test(test_path)
+    ]
+  end
+
   defp fixed_previous_mode(server_state) do
     case server_state[:elixir][:failures] do
       [most_recent | _] ->
-        {[
-           {:puts, "Switching to fixed mode"},
-           {:puts, "Will only run 'mix test #{most_recent}' unless told otherwise..."},
-           {:puts, "Return to default mode by entering 'ex d'"},
-           Actions.mix_test(most_recent)
-         ], Language.set_mode(server_state, :fixed_previous)}
+        {fixed_previous_mode_actions(most_recent),
+         Language.set_mode(server_state, :fixed_previous)}
 
       _ ->
         {[
@@ -96,7 +89,10 @@ defmodule PolyglotWatcher.Elixir.UserInputParser do
   end
 
   defp default_mode(server_state) do
-    {[{:puts, "Switching back to default mode"}], Language.set_mode(server_state, :default)}
+    {[
+       {:run_sys_cmd, "tput", ["reset"]},
+       {:puts, "Switching to default mode"}
+     ], Language.set_mode(server_state, :default)}
   end
 
   defp mix_test(server_state) do
