@@ -10,10 +10,9 @@ defmodule PolyglotWatcher.Puts do
     white: IO.ANSI.white(),
     light_white: IO.ANSI.light_white(),
     yellow: IO.ANSI.yellow(),
-    black_on_yellow: IO.ANSI.black() <> IO.ANSI.yellow_background(),
-    black_on_cyan: IO.ANSI.black() <> IO.ANSI.cyan_background(),
     italic: IO.ANSI.italic(),
-    bright: IO.ANSI.bright()
+    bright: IO.ANSI.bright(),
+    strikethrough: "\e[9m"
   }
 
   @overwrite_previous_line_code "\e[1A\e[K"
@@ -46,13 +45,19 @@ defmodule PolyglotWatcher.Puts do
     build_multicoloured(rest, acc <> build(style, message))
   end
 
-  defp build(style, message) do
-    ansi_code = @styles[style]
+  defp build(styles, message) when is_list(styles) do
+    Enum.reduce(styles, "", fn style, acc ->
+      ansi_code = @styles[style]
 
-    if ansi_code do
-      @styles[style] <> message <> IO.ANSI.reset()
-    else
-      raise "I don't recognise the style '#{style}'"
-    end
+      if ansi_code do
+        acc <> ansi_code
+      else
+        raise "I don't recognise the style '#{style}'"
+      end
+    end) <> message <> IO.ANSI.reset()
+  end
+
+  defp build(style, message) do
+    build([style], message)
   end
 end

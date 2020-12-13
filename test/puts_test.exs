@@ -14,6 +14,12 @@ defmodule PolyglotWatcher.PutsTest do
                Puts.on_new_line([{:magenta, "magenta"}, {:red, "red"}, {:green, "green"}])
              end) == "\e[35mmagenta\e[0m\e[31mred\e[0m\e[32mgreen\e[0m\n"
     end
+
+    test "can accept multiple styles" do
+      assert capture_io(fn ->
+               Puts.on_new_line([{[:magenta, :strikethrough], "magenta"}])
+             end) == "\e[35m\e[9mmagenta\e[0m\n"
+    end
   end
 
   describe "on_new_line/2" do
