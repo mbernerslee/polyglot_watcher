@@ -5,6 +5,8 @@ defmodule PolyglotWatcher.UserInputTest do
 
   @languages [Pear, Blueberry]
 
+  @error_action [{:puts, UserInput.usage(@languages)}]
+
   describe "startup/3" do
     test "with no CLI args, puts the language modules starting state in the server state" do
       server_state = ServerStateBuilder.without_watcher_pid(ServerStateBuilder.build())
@@ -86,26 +88,40 @@ defmodule PolyglotWatcher.UserInputTest do
       assert {[{:puts, "nom"}], %{blueb: %{nom: true}}} = result
     end
 
-    test "given language agnostic input commands" do
+    test "can clear screen" do
       server_state = ServerStateBuilder.build()
 
       result = UserInput.determine_actions("c\n", server_state, @languages)
       assert {[{:run_sys_cmd, "tput", ["reset"]}], ^server_state} = result
     end
 
+    test "can run shell commands" do
+      server_state = ServerStateBuilder.build()
+
+      result = UserInput.determine_actions("sh echo hello\n", server_state, @languages)
+      assert {[{:run_sys_cmd, "echo", ["hello"]}], ^server_state} = result
+
+      result = UserInput.determine_actions("sh ls\n", server_state, @languages)
+      assert {[{:run_sys_cmd, "ls", []}], ^server_state} = result
+
+      result = UserInput.determine_actions("    sh ls    \n", server_state, @languages)
+      assert {[{:run_sys_cmd, "ls", []}], ^server_state} = result
+
+      result = UserInput.determine_actions("sh\n", server_state, @languages)
+      assert {@error_action, ^server_state} = result
+    end
+
     test "when given something that's not understood at all, prints the usage" do
       server_state = ServerStateBuilder.build()
 
-      usage = UserInput.usage(@languages)
-
       result = UserInput.determine_actions("pear nonsense\n", server_state, @languages)
-      assert {[{:puts, ^usage}], ^server_state} = result
+      assert {@error_action, ^server_state} = result
 
       result = UserInput.determine_actions("blueb nonsense\n", server_state, @languages)
-      assert {[{:puts, ^usage}], ^server_state} = result
+      assert {@error_action, ^server_state} = result
 
       result = UserInput.determine_actions("some nonesense\n", server_state, @languages)
-      assert {[{:puts, ^usage}], ^server_state} = result
+      assert {@error_action, ^server_state} = result
     end
   end
 
@@ -119,6 +135,11 @@ defmodule PolyglotWatcher.UserInputTest do
                {:white, "  • "},
                {:cyan, "c"},
                {:white, "  clears the screen\n"},
+               {:white, "  • "},
+               {:cyan, "sh <some shell command>"},
+               {:white, " runs "},
+               {:cyan, "<some shell command>"},
+               {:white, " from your shell\n"},
                {:white, "  • "},
                {:cyan, "any unrecognised input"},
                {:white, "  prints this message"},

@@ -22,6 +22,11 @@ defmodule PolyglotWatcher.UserInput do
       {:cyan, "c"},
       {:white, "  clears the screen\n"},
       {:white, "  • "},
+      {:cyan, "sh <some shell command>"},
+      {:white, " runs "},
+      {:cyan, "<some shell command>"},
+      {:white, " from your shell\n"},
+      {:white, "  • "},
       {:cyan, "any unrecognised input"},
       {:white, "  prints this message"},
       {:white, "\n\n"}
@@ -123,15 +128,43 @@ defmodule PolyglotWatcher.UserInput do
   end
 
   defp language_agnostic_actions do
-    %{
-      "c" => fn server_state -> {[{:run_sys_cmd, "tput", ["reset"]}], server_state} end
-    }
+    [
+      {~r|^c$|, &clear_screen/2},
+      {~r|^sh .+$|, &run_shell_command_actions/2}
+    ]
+  end
+
+  defp clear_screen(_, server_state) do
+    {:ok, {[{:run_sys_cmd, "tput", ["reset"]}], server_state}}
+  end
+
+  defp run_shell_command_actions(user_input, server_state) do
+    case user_input |> String.trim_leading("sh ") |> String.split(" ") do
+      [cmd] ->
+        {:ok, {[{:run_sys_cmd, cmd, []}], server_state}}
+
+      [cmd | args] ->
+        {:ok, {[{:run_sys_cmd, cmd, args}], server_state}}
+
+      _ ->
+        :error
+    end
   end
 
   defp language_agnostic_actions(user_input, server_state) do
-    case language_agnostic_actions()[user_input] do
-      nil -> :error
-      fun -> {:ok, fun.(server_state)}
+    user_input = String.trim(user_input)
+    do_language_agnostic_actions(language_agnostic_actions(), user_input, server_state)
+  end
+
+  defp do_language_agnostic_actions([], _user_input, _server_state) do
+    :error
+  end
+
+  defp do_language_agnostic_actions([{regex, action} | rest], user_input, server_state) do
+    if Regex.match?(regex, user_input) do
+      action.(user_input, server_state)
+    else
+      do_language_agnostic_actions(rest, user_input, server_state)
     end
   end
 end

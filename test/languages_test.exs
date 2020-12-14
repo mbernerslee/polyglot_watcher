@@ -1,13 +1,16 @@
 defmodule PolyglotWatcher.Languages.ExampleLanguageModule do
-  alias PolyglotWatcher.Language
-  @behaviour Language
+  alias PolyglotWatcher.LanguageBehaviour
+  @behaviour LanguageBehaviour
 
-  @impl Language
+  @impl LanguageBehaviour
   def file_extensions do
     [".cool"]
   end
 
-  @impl Language
+  @impl LanguageBehaviour
+  def starting_state, do: {:cool, :dude}
+
+  @impl LanguageBehaviour
   def determine_actions(_file, server_state) do
     {[{:puts, "hello there mother!"}], Map.put(server_state, :modified, "server state")}
   end
