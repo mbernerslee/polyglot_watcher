@@ -46,11 +46,13 @@ defmodule PolyglotWatcher.Elixir.Actions do
     current_line = [{colour, message}]
     Puts.on_new_line(message, colour)
 
-    {mix_test_output, exit_code} =
-      CommonActions.spin_while(
-        fn -> System.cmd("mix", ["test", "--color"], stderr_to_stdout: true) end,
-        current_line
-      )
+    # {mix_test_output, exit_code} =
+    #  CommonActions.spin_while(
+    #    fn -> System.cmd("mix", ["test", "--color"], stderr_to_stdout: true) end,
+    #    current_line
+    #  )
+    mix_test_output = "oops"
+    exit_code = 1
 
     mix_test_output
     |> Language.mix_test_summary()
