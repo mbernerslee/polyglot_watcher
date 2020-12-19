@@ -1,5 +1,5 @@
 defmodule PolyglotWatcher.Elixir.Actions do
-  alias PolyglotWatcher.{CommonActions, Puts}
+  alias PolyglotWatcher.{CommonActions, Puts, ShellCommandRunner}
   alias PolyglotWatcher.Elixir.Language
 
   @success_exit_code 0
@@ -46,13 +46,11 @@ defmodule PolyglotWatcher.Elixir.Actions do
     current_line = [{colour, message}]
     Puts.on_new_line(message, colour)
 
-    # {mix_test_output, exit_code} =
-    #  CommonActions.spin_while(
-    #    fn -> System.cmd("mix", ["test", "--color"], stderr_to_stdout: true) end,
-    #    current_line
-    #  )
-    mix_test_output = "oops"
-    exit_code = 1
+    {mix_test_output, exit_code} =
+      CommonActions.spin_while(
+        fn -> System.cmd("mix", ["test", "--color"], stderr_to_stdout: true) end,
+        current_line
+      )
 
     mix_test_output
     |> Language.mix_test_summary()
@@ -62,16 +60,13 @@ defmodule PolyglotWatcher.Elixir.Actions do
   end
 
   def run_action({:mix_test, path}, server_state) do
-    {mix_test_output, exit_code} =
-      System.cmd("mix", ["test", path, "--color"], stderr_to_stdout: true)
+    {mix_test_output, exit_code} = ShellCommandRunner.run(["mix", "test", path, "--color"])
 
-    IO.puts(mix_test_output)
     {exit_code, Language.add_mix_test_history(server_state, mix_test_output)}
   end
 
   def run_action(:mix_test, server_state) do
-    {mix_test_output, exit_code} = System.cmd("mix", ["test", "--color"], stderr_to_stdout: true)
-    IO.puts(mix_test_output)
+    {mix_test_output, exit_code} = ShellCommandRunner.run(["mix", "test", "--color"])
     {exit_code, Language.reset_mix_test_history(server_state, mix_test_output)}
   end
 

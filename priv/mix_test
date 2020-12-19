@@ -1,9 +1,0 @@
-#!/bin/bash
-
-
-exec 5>&1
-
-output=$(mix test --color 2>&1 | tee >(cat - >&5); exit "${PIPESTATUS[0]}")
-exit_code=$?
-
-exit $exit_code

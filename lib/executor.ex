@@ -84,6 +84,10 @@ defmodule PolyglotWatcher.Executor.Real do
     end)
   end
 
+  defp run_action({:run_sys_cmd, "tput", _}, server_state) do
+    {0, server_state}
+  end
+
   defp run_action({:run_sys_cmd, cmd, args}, server_state) do
     {System.cmd(cmd, args, into: IO.stream(:stdio, :line)), server_state}
   end
