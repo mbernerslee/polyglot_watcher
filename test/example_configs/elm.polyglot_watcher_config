@@ -1,0 +1,5 @@
+{
+  "watcher_modes": [
+    {"name": "elm", "file_pattern": "(.+)\.elm"},
+    ]
+}

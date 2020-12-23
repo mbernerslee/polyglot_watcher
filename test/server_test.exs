@@ -18,6 +18,10 @@ defmodule PolyglotWatcher.ServerTest do
     test "with invalid command line args given, exits" do
       assert {:error, :normal} == Server.start_link(["nonsense"], [])
     end
+
+    test "can read a config file" do
+      flunk("hello")
+    end
   end
 
   describe "child_spec/0" do
