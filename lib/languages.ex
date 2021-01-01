@@ -1,7 +1,8 @@
 defmodule PolyglotWatcher.Languages do
   alias PolyglotWatcher.Elixir.Language, as: ElixirLang
+  alias PolyglotWatcher.Elm.Language, as: Elm
 
-  @all [ElixirLang]
+  @all [ElixirLang, Elm]
 
   def extensions_to_modules do
     Enum.reduce(@all, %{}, fn language_module, acc ->
