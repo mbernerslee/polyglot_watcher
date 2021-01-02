@@ -84,9 +84,9 @@ defmodule PolyglotWatcher.Executor.Real do
     end)
   end
 
-  # defp run_action({:run_sys_cmd, "tput", _}, server_state) do
-  #  {0, server_state}
-  # end
+  defp run_action({:run_sys_cmd, "tput", _}, server_state) do
+    {0, server_state}
+  end
 
   defp run_action({:run_sys_cmd, cmd, args}, server_state) do
     {System.cmd(cmd, args, into: IO.stream(:stdio, :line)), server_state}
@@ -106,6 +106,14 @@ defmodule PolyglotWatcher.Executor.Real do
 
   defp run_action({:module_action, module, args}, server_state) do
     module.run_action(args, server_state)
+  end
+
+  defp run_action({:cd, relative_path}, server_state) do
+    {File.cd!(relative_path), server_state}
+  end
+
+  defp run_action(:reset_dir, server_state) do
+    {File.cd!(server_state.starting_dir), server_state}
   end
 
   defp run_action({:run_elixir_fn, fun}, server_state), do: {fun.(), server_state}

@@ -29,6 +29,8 @@ defmodule PolyglotWatcher.ShellCommandRunner do
         {:noreply, Map.update!(state, :command_output, &(&1 <> command_output))}
 
       %{"exit_code" => exit_code} ->
+        IO.puts(state.command_output)
+        IO.puts(exit_code)
         send(state.caller_pid, {:exit, {state.command_output, String.to_integer(exit_code)}})
         {:stop, :normal, state}
     end

@@ -26,7 +26,11 @@ defmodule PolyglotWatcher.Server do
         {:ok, watcher_pid} = FileSystem.start_link(dirs: ["."])
         FileSystem.subscribe(watcher_pid)
 
-        server_state = Map.put(server_state, :watcher_pid, watcher_pid)
+        server_state =
+          server_state
+          |> Map.put(:watcher_pid, watcher_pid)
+          |> Map.put(:starting_dir, File.cwd!())
+
         server_state = Executor.run_actions({actions, server_state})
 
         listen_for_user_input()

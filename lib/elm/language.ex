@@ -24,14 +24,23 @@ defmodule PolyglotWatcher.Elm.Language do
     actions =
       case find_elm_json_and_main(path) do
         {:ok, {elm_json_path, elm_main_path}} ->
-          [
-            {:cd, elm_json_path},
-            {:module_action, Actions, {:make, elm_main_path}},
-            {:cd, "-"}
-          ]
+          %{
+            run: [
+              {:cd, elm_json_path},
+              {:module_action, Actions, {:make, elm_main_path}}
+            ],
+            next: %{fallback: %{run: [:reset_dir]}}
+          }
 
         _ ->
-          []
+          [
+            {:puts,
+             [
+               {:red,
+                "I could not find a corresponding elm.json and / or Main.elm file(s) for the file you saved:"}
+             ]},
+            {:puts, [{:red, file.file_path}]}
+          ]
       end
 
     {actions, server_state}
@@ -44,26 +53,40 @@ defmodule PolyglotWatcher.Elm.Language do
     find_elm_json_and_main(%{json: nil, main: nil}, cwd, path)
   end
 
+  defp find_elm_json_and_main(acc, cwd, cwd) do
+    continuation_fun = fn _ -> :error end
+    found_them_yet(acc, cwd, continuation_fun)
+  end
+
   defp find_elm_json_and_main(acc, cwd, path) do
+    continuation_fun = fn acc -> do_find_elm_json_and_main(acc, cwd, path) end
+    found_them_yet(acc, cwd, continuation_fun)
+  end
+
+  defp do_find_elm_json_and_main(acc, cwd, path) do
+    files = File.ls!(path)
+
+    acc =
+      acc
+      |> add_main(path, files)
+      |> add_json(path, files)
+
+    path =
+      path
+      |> Path.split()
+      |> Enum.reverse()
+      |> tl()
+      |> Enum.reverse()
+      |> Path.join()
+
+    find_elm_json_and_main(acc, cwd, path)
+  end
+
+  defp found_them_yet(acc, cwd, continuation_fun) do
     if acc.json && acc.main do
       {:ok, {Path.relative_to(acc.json, cwd), Path.relative_to(acc.main, acc.json)}}
     else
-      files = File.ls!(path)
-
-      acc =
-        acc
-        |> add_main(path, files)
-        |> add_json(path, files)
-
-      path =
-        path
-        |> Path.split()
-        |> Enum.reverse()
-        |> tl()
-        |> Enum.reverse()
-        |> Path.join()
-
-      find_elm_json_and_main(acc, cwd, path)
+      continuation_fun.(acc)
     end
   end
 

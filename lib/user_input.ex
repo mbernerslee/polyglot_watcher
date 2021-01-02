@@ -1,7 +1,8 @@
 defmodule PolyglotWatcher.UserInput do
   alias PolyglotWatcher.Elixir, as: ElixirLang
+  alias PolyglotWatcher.Elm
 
-  @languages [ElixirLang]
+  @languages [ElixirLang, Elm]
 
   @startup_actions [
     {:run_sys_cmd, "tput", ["reset"]},
@@ -66,14 +67,17 @@ defmodule PolyglotWatcher.UserInput do
   end
 
   def startup(command_line_args, server_state, languages) do
-    server_state = add_language_starting_states(server_state, languages)
+    server_state =
+      server_state
+      |> add_language_starting_states(languages)
 
     {actions, server_state} =
       command_line_args
       |> Enum.join(" ")
       |> determine_actions(server_state, languages)
 
-    if {actions, server_state} == unrecognised(server_state, languages) do
+    if {actions, server_state} ==
+         unrecognised(server_state, languages) do
       {:error, {bad_cli_args_actions(command_line_args, languages), server_state}}
     else
       {:ok, {prepend_startup_actions(actions), server_state}}

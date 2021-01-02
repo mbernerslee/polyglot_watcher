@@ -85,7 +85,7 @@ defmodule PolyglotWatcher.Elixir.Usage do
       {:white, "\n"},
       {:white, "  "},
       {:white, "when any elixir file is saved"},
-      {:white, "\n"}
+      {:white, "\n\n"}
     ]
   end
 end
