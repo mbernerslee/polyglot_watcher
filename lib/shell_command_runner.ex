@@ -21,7 +21,10 @@ defmodule PolyglotWatcher.ShellCommandRunner do
 
   @impl true
   def handle_info({_port, {:data, command_output}}, state) do
-    command_output = to_string(command_output)
+    IO.inspect(command_output, limit: :infinity)
+    Enum.each(command_output, fn char -> IO.inspect({char, List.to_string([char])}) end)
+    # command_output = to_string(command_output)
+    command_output = List.to_string(command_output)
 
     case Regex.named_captures(@exit_code_regex, command_output) do
       nil ->
@@ -29,8 +32,6 @@ defmodule PolyglotWatcher.ShellCommandRunner do
         {:noreply, Map.update!(state, :command_output, &(&1 <> command_output))}
 
       %{"exit_code" => exit_code} ->
-        IO.puts(state.command_output)
-        IO.puts(exit_code)
         send(state.caller_pid, {:exit, {state.command_output, String.to_integer(exit_code)}})
         {:stop, :normal, state}
     end
