@@ -5,7 +5,7 @@ defmodule PolyglotWatcher.Elm.LanguageTest do
   alias PolyglotWatcher.Elm.Actions
 
   describe "determine_actions/2" do
-    test "given a Main.elm file backed by a elm.json" do
+    test "given a Main.elm file backed by an elm.json" do
       file = %{extension: ".elm", file_path: "test/elm_examples/simplest_project/src/Main.elm"}
       server_state = ServerStateBuilder.build()
 
@@ -14,9 +14,10 @@ defmodule PolyglotWatcher.Elm.LanguageTest do
       assert %{
                run: [
                  {:cd, "test/elm_examples/simplest_project"},
+                 {:puts, "Running elm make test/elm_examples/simplest_project/src/Main.elm"},
                  {:module_action, Actions, {:make, "src/Main.elm"}}
                ],
-               next: %{fallback: [{:cd, "-"}]}
+               next: %{fallback: %{run: [{:run_sys_cmd, "tput", ["reset"]}, :reset_dir]}}
              } = actions
     end
 
@@ -49,9 +50,10 @@ defmodule PolyglotWatcher.Elm.LanguageTest do
       assert %{
                run: [
                  {:cd, "test/elm_examples/project_with_two_files"},
+                 _,
                  {:module_action, Actions, {:make, "src/Main.elm"}}
                ],
-               next: %{fallback: [{:cd, "-"}]}
+               next: _
              } = actions
     end
 
@@ -68,9 +70,10 @@ defmodule PolyglotWatcher.Elm.LanguageTest do
       assert %{
                run: [
                  {:cd, "test/elm_examples/nested_directory_project"},
+                 _,
                  {:module_action, Actions, {:make, "src/Main.elm"}}
                ],
-               next: %{fallback: [{:cd, "-"}]}
+               next: _
              } = actions
     end
 

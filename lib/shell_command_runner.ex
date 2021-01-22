@@ -21,10 +21,10 @@ defmodule PolyglotWatcher.ShellCommandRunner do
 
   @impl true
   def handle_info({_port, {:data, command_output}}, state) do
-    IO.inspect(command_output, limit: :infinity)
-    Enum.each(command_output, fn char -> IO.inspect({char, List.to_string([char])}) end)
-    # command_output = to_string(command_output)
-    command_output = List.to_string(command_output)
+    # this line looks weird and pointless, but it solves elm make output from being wrong
+    # and outputting "Main âââ>", instead of "Main ───>"
+    # https://elixirforum.com/t/converting-a-list-of-bytes-from-utf-8-or-iso-8859-1-to-elixir-string/20032/2
+    command_output = :unicode.characters_to_binary(:erlang.list_to_binary(command_output))
 
     case Regex.named_captures(@exit_code_regex, command_output) do
       nil ->
@@ -35,10 +35,5 @@ defmodule PolyglotWatcher.ShellCommandRunner do
         send(state.caller_pid, {:exit, {state.command_output, String.to_integer(exit_code)}})
         {:stop, :normal, state}
     end
-  end
-
-  @impl true
-  def terminate(_reason, state) do
-    Port.close(state.port)
   end
 end
