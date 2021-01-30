@@ -24,17 +24,17 @@ defmodule PolyglotWatcher.Elm.Language do
     actions =
       case find_elm_json_and_main(path) do
         {:ok, {elm_json_path, elm_main_path}} ->
-          %{
-            run: [
-              {:cd, elm_json_path},
-              {:puts, "Running elm make #{elm_json_path}/#{elm_main_path}"},
-              {:module_action, Actions, {:make, elm_main_path}}
-            ],
-            next: %{fallback: %{run: [{:run_sys_cmd, "tput", ["reset"]}, :reset_dir]}}
-          }
+          [
+            {:run_sys_cmd, "tput", ["reset"]},
+            {:cd, elm_json_path},
+            {:puts, "Running elm make #{elm_json_path}/#{elm_main_path}"},
+            {:module_action, Actions, {:make, elm_main_path}},
+            :reset_dir
+          ]
 
         _ ->
           [
+            {:run_sys_cmd, "tput", ["reset"]},
             {:puts,
              [
                {:red,

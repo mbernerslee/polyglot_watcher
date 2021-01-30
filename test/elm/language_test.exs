@@ -11,14 +11,13 @@ defmodule PolyglotWatcher.Elm.LanguageTest do
 
       assert {actions, ^server_state} = Elm.determine_actions(file, server_state)
 
-      assert %{
-               run: [
-                 {:cd, "test/elm_examples/simplest_project"},
-                 {:puts, "Running elm make test/elm_examples/simplest_project/src/Main.elm"},
-                 {:module_action, Actions, {:make, "src/Main.elm"}}
-               ],
-               next: %{fallback: %{run: [{:run_sys_cmd, "tput", ["reset"]}, :reset_dir]}}
-             } = actions
+      assert [
+               {:run_sys_cmd, "tput", ["reset"]},
+               {:cd, "test/elm_examples/simplest_project"},
+               {:puts, "Running elm make test/elm_examples/simplest_project/src/Main.elm"},
+               {:module_action, Actions, {:make, "src/Main.elm"}},
+               :reset_dir
+             ] == actions
     end
 
     test "returns as error if no elm main or elm json is found" do
@@ -28,13 +27,14 @@ defmodule PolyglotWatcher.Elm.LanguageTest do
       assert {actions, _server_state} = Elm.determine_actions(file, server_state)
 
       assert [
+               {:run_sys_cmd, "tput", ["reset"]},
                {:puts,
                 [
                   {:red,
                    "I could not find a corresponding elm.json and / or Main.elm file(s) for the file you saved:"}
                 ]},
                {:puts, [{:red, "test/elm_examples/NoMainJankFile.elm"}]}
-             ] = actions
+             ] == actions
     end
 
     test "given an elm file backjed by Main.elm & elm.json" do
@@ -47,14 +47,8 @@ defmodule PolyglotWatcher.Elm.LanguageTest do
 
       assert {actions, _server_state} = Elm.determine_actions(file, server_state)
 
-      assert %{
-               run: [
-                 {:cd, "test/elm_examples/project_with_two_files"},
-                 _,
-                 {:module_action, Actions, {:make, "src/Main.elm"}}
-               ],
-               next: _
-             } = actions
+      assert Enum.member?(actions, {:cd, "test/elm_examples/project_with_two_files"})
+      assert Enum.member?(actions, {:module_action, Actions, {:make, "src/Main.elm"}})
     end
 
     test "given deeply nested elm file backjed by Main.elm & elm.json" do
@@ -67,16 +61,32 @@ defmodule PolyglotWatcher.Elm.LanguageTest do
 
       assert {actions, _server_state} = Elm.determine_actions(file, server_state)
 
-      assert %{
-               run: [
-                 {:cd, "test/elm_examples/nested_directory_project"},
-                 _,
-                 {:module_action, Actions, {:make, "src/Main.elm"}}
-               ],
-               next: _
-             } = actions
+      assert Enum.member?(actions, {:cd, "test/elm_examples/nested_directory_project"})
+      assert Enum.member?(actions, {:module_action, Actions, {:make, "src/Main.elm"}})
     end
 
-    # TODO add a test for when elm json and or main are not found
+    test "given a broken elm project with no elm.json, returns error" do
+      file = %{
+        extension: ".elm",
+        file_path: "test/elm_examples/no_elm_json_project/src/Main.elm"
+      }
+
+      server_state = ServerStateBuilder.build()
+
+      assert {[_, action | _], _server_state} = Elm.determine_actions(file, server_state)
+      assert {:puts, [{:red, "I could not find a corresponding elm.json" <> _}]} = action
+    end
+
+    test "given a broken elm project with no Main.elm, returns error" do
+      file = %{
+        extension: ".elm",
+        file_path: "test/elm_examples/no_elm_main_project/src/Other.elm"
+      }
+
+      server_state = ServerStateBuilder.build()
+
+      assert {[_, action | _], _server_state} = Elm.determine_actions(file, server_state)
+      assert {:puts, [{:red, "I could not find a corresponding elm.json" <> _}]} = action
+    end
   end
 end
