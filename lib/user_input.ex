@@ -119,11 +119,12 @@ defmodule PolyglotWatcher.UserInput do
   end
 
   defp determine_actions([language | rest], user_input, server_state, all_languages) do
-    module = Module.concat(language, UserInput)
+    module =
+      Module.concat(language, UserInput)
 
     case module.determine_actions(user_input, server_state) do
       {:ok, {actions, server_state}} -> {actions, server_state}
-      :error -> determine_actions(rest, user_input, server_state, all_languages)
+      :no_actions -> determine_actions(rest, user_input, server_state, all_languages)
     end
   end
 
@@ -157,18 +158,18 @@ defmodule PolyglotWatcher.UserInput do
 
   defp language_agnostic_actions(user_input, server_state) do
     user_input = String.trim(user_input)
-    do_language_agnostic_actions(language_agnostic_actions(), user_input, server_state)
+    language_agnostic_actions(language_agnostic_actions(), user_input, server_state)
   end
 
-  defp do_language_agnostic_actions([], _user_input, _server_state) do
+  defp language_agnostic_actions([], _user_input, _server_state) do
     :error
   end
 
-  defp do_language_agnostic_actions([{regex, action} | rest], user_input, server_state) do
+  defp language_agnostic_actions([{regex, action} | rest], user_input, server_state) do
     if Regex.match?(regex, user_input) do
       action.(user_input, server_state)
     else
-      do_language_agnostic_actions(rest, user_input, server_state)
+      language_agnostic_actions(rest, user_input, server_state)
     end
   end
 end

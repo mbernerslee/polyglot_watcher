@@ -9,10 +9,6 @@ defmodule PolyglotWatcher.ExampleLanguages.Pear.UserInput do
   @impl UserInputBehaviour
   def usage, do: [{:green, "how to use pear"}]
 
-  #def starting_state do
-  #  {:pear, %{juicy: true, tasty: true, pick: false, eat: false, peel: false}}
-  #end
-
   @impl UserInputBehaviour
   def determine_actions(user_input, server_state) do
     user_input
@@ -22,7 +18,7 @@ defmodule PolyglotWatcher.ExampleLanguages.Pear.UserInput do
       ["pick"] -> {:ok, {[{:puts, "pick"}], put_in(server_state, [:pear, :pick], true)}}
       ["eat"] -> {:ok, {[{:puts, "eat"}], put_in(server_state, [:pear, :eat], true)}}
       ["peel"] -> {:ok, {%{run: [{:puts, "peel"}]}, put_in(server_state, [:pear, :peel], true)}}
-      _ -> :error
+      _ -> :no_actions
     end
   end
 end

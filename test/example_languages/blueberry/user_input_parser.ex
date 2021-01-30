@@ -19,7 +19,7 @@ defmodule PolyglotWatcher.ExampleLanguages.Blueberry.UserInput do
     |> case do
       ["harvest"] -> {:ok, {[{:puts, "harvest"}], put_in(server_state, [:blueb, :harvest], true)}}
       ["nom"] -> {:ok, {[{:puts, "nom"}], put_in(server_state, [:blueb, :nom], true)}}
-      _ -> :error
+      _ -> :no_actions
     end
   end
 end

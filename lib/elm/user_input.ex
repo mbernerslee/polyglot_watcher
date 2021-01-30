@@ -12,7 +12,7 @@ defmodule PolyglotWatcher.Elm.UserInput do
   defdelegate usage, to: Usage
 
   @impl UserInputBehaviour
-  def determine_actions(user_input, server_state) do
-    :error
+  def determine_actions(_user_input, _server_state) do
+    :no_actions
   end
 end

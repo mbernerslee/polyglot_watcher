@@ -123,6 +123,13 @@ defmodule PolyglotWatcher.UserInputTest do
       result = UserInput.determine_actions("some nonesense\n", server_state, @languages)
       assert {@error_action, ^server_state} = result
     end
+
+    test "when no actions are recognised for any languages AND no language agnostic action is detected, shows the usage output" do
+      server_state = ServerStateBuilder.build()
+
+      result = UserInput.determine_actions("total nonsense", server_state, [Pear])
+      assert {[puts: [{_, "Usage" <> _} | _]], ^server_state} = result
+    end
   end
 
   describe "usage/1" do

@@ -8,8 +8,7 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
     test "can change the server state to fix all mode" do
       server_state = ServerStateBuilder.build()
 
-      assert {:ok, {actions, server_state}} =
-               UserInput.determine_actions("ex fa\n", server_state)
+      assert {:ok, {actions, server_state}} = UserInput.determine_actions("ex fa\n", server_state)
 
       assert %{elixir: %{mode: {:fix_all, :mix_test}}} = server_state
 
@@ -83,10 +82,10 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
       assert %{elixir: %{mode: {:fixed_file, "test/example_test.exs:9"}}} = new_server_state
     end
 
-    test "stays in previous mode given janky user_input & returns the usage instructions" do
+    test "given nonsense but with the prefix, returns no actions" do
       server_state = ServerStateBuilder.build()
 
-      assert :error == UserInput.determine_actions("ex total_jank\n", server_state)
+      assert :no_actions == UserInput.determine_actions("ex total_jank\n", server_state)
     end
   end
 

@@ -22,7 +22,7 @@ defmodule PolyglotWatcher.Elixir.UserInput do
   end
 
   defp fallback(:error, _server_state) do
-    :error
+    :no_actions
   end
 
   defp fallback({:ok, {actions, server_state}}, _server_state) do
@@ -35,7 +35,7 @@ defmodule PolyglotWatcher.Elixir.UserInput do
        {fixed_previous_mode_actions(possible_file_path),
         put_in(server_state, [:elixir, :mode], {:fixed_file, possible_file_path})}}
     else
-      :error
+      :no_actions
     end
   end
 
