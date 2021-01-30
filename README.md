@@ -67,6 +67,18 @@ Switching to this mode will fail if the stored history of failing tests is empty
 `ex a` will not switch mode.\
 It will run `mix test` and show the full output on screen\
 
+## Usage with an Elm Project
+- Run `polyglot_watcher` from the root of your project
+
+There's only one watcher mode for elm right now, which works as follosws:
+Any detected save to `.elm` files will trigger `elm make path/to/the/corresponding/Main.elm`.
+This will fail if 
+- no corresponding `Main.elm` file is found
+- no corresponding `elm.json` file is found
+
+It tries to find the "corresponding `Main.elm`" file by traversing the file system, (starting from the saved file) to find `Main.elm` and `elm.json` to work out which directory `elm make <some/path/Main.elm>` should run from, and what `<some/path/Main.elm>` is. In the event that you've saved an elm module that's used in multiple elm apps (i.e. different Main.elm files), then it'll just arbitrary choose the `Main.elm` file that it finds first. Work in progress!
+
+
 ## License
 Copyright © 2020 Matthew Berners-Lee mattbernerslee@gmail.com\
 This work is free. You can redistribute it and/or modify it under the
