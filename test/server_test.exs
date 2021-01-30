@@ -1,7 +1,8 @@
 defmodule PolyglotWatcher.ServerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   import ExUnit.CaptureIO
   alias PolyglotWatcher.{Server, ServerStateBuilder}
+  alias PolyglotWatcher.Executor.{Test, BlockingTest}
 
   describe "start_link/2" do
     test "with no command line args given, spawns the server process with default starting state" do
@@ -43,6 +44,23 @@ defmodule PolyglotWatcher.ServerTest do
                  server_state
                )
     end
+  end
+
+  @elixir_file_event {:file_event, :pid,
+                      {"/home/berners/src/polyglot_watcher/lib/server.ex", [:modified, :closed]}}
+
+  test "ignores file system changes whilst actions from the previous file system change are still running" do
+    Application.put_env(:polyglot_watcher, :executor, BlockingTest)
+
+    BlockingTest.start_link()
+    IO.inspect("1")
+    Server.start_link([], [])
+    IO.inspect("2")
+    # BlockingTest.unblock()
+    flunk("hello")
+    IO.inspect("3")
+
+    Application.put_env(:polyglot_watcher, :executor, Test)
   end
 
   describe "handle_call/3 - user_input" do

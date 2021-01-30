@@ -1,6 +1,7 @@
 defmodule PolyglotWatcher.Server do
   use GenServer
   alias PolyglotWatcher.{Executor, Languages, UserInput, FileSystemChange}
+  alias PolyglotWatcher.Executor.{Test, BlockingTest}
 
   @process_name :server
 
@@ -21,6 +22,14 @@ defmodule PolyglotWatcher.Server do
 
   @impl true
   def init(command_line_args) do
+    if Application.get_env(:polyglot_watcher, :executor) == BlockingTest do
+      {:ok, %{}}
+    else
+      standard_init(command_line_args)
+    end
+  end
+
+  def standard_init(command_line_args) do
     case UserInput.startup(command_line_args, @initial_state) do
       {:ok, {actions, server_state}} ->
         {:ok, watcher_pid} = FileSystem.start_link(dirs: ["."])
