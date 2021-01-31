@@ -7,7 +7,7 @@ defmodule PolyglotWatcher.Server do
 
   @default_options [name: @process_name]
 
-  @initial_state %{ignore_file_changes: false}
+  @initial_state %{ignore_file_changes: false, previous_action: nil, next_action: nil}
 
   def child_spec(command_line_args \\ []) do
     %{
@@ -23,7 +23,15 @@ defmodule PolyglotWatcher.Server do
   @impl true
   def init(command_line_args) do
     if Application.get_env(:polyglot_watcher, :executor) == BlockingTest do
-      {:ok, %{}}
+      {:ok, watcher_pid} = FileSystem.start_link(dirs: ["."])
+      FileSystem.subscribe(watcher_pid)
+
+      server_state =
+        @initial_state
+        |> Map.put(:watcher_pid, watcher_pid)
+        |> Map.put(:starting_dir, File.cwd!())
+
+      {:ok, server_state}
     else
       standard_init(command_line_args)
     end
@@ -60,8 +68,8 @@ defmodule PolyglotWatcher.Server do
 
       state =
         file_path
-        |> FileSystemChange.determine_language_module(state)
-        |> Languages.determine_actions()
+        |> file_system_change_module().determine_language_module(state)
+        |> languages_module().determine_actions()
         |> Executor.run_actions()
 
       set_ignore_file_changes(false)
@@ -108,5 +116,12 @@ defmodule PolyglotWatcher.Server do
 
   defp should_listen_for_user_input? do
     Application.get_env(:polyglot_watcher, :listen_for_user_input, true)
+  end
+
+  defp file_system_change_module do
+    Application.get_env(:polyglot_watcher, :file_system_change, FileSystemChange)
+  end
+  defp languages_module do
+    Application.get_env(:polyglot_watcher, :languages, Languages)
   end
 end

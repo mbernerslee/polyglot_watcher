@@ -3,6 +3,10 @@ defmodule PolyglotWatcher.ServerTest do
   import ExUnit.CaptureIO
   alias PolyglotWatcher.{Server, ServerStateBuilder}
   alias PolyglotWatcher.Executor.{Test, BlockingTest}
+  alias PolyglotWatcher.LanguagesTest
+  alias PolyglotWatcher.Languages
+  alias PolyglotWatcher.FileSystemChange
+  alias PolyglotWatcher.Mocks
 
   describe "start_link/2" do
     test "with no command line args given, spawns the server process with default starting state" do
@@ -46,21 +50,131 @@ defmodule PolyglotWatcher.ServerTest do
     end
   end
 
-  @elixir_file_event {:file_event, :pid,
-                      {"/home/berners/src/polyglot_watcher/lib/server.ex", [:modified, :closed]}}
+  test "actions stack" do
+    Application.put_env(:polyglot_watcher, :languages, Mocks.Languages)
+    Application.put_env(:polyglot_watcher, :file_system_change, Mocks.FileSystemChange)
+
+    {:ok, languages_pid} =
+      Mocks.Languages.start_with_action_stack([1, 2, 3, 4, 5])
+      |> IO.inspect()
+
+    :sys.get_state(languages_pid)
+    |> IO.inspect()
+
+    {:ok, server_pid} = Server.start_link([], [])
+    wait_until_server_responds_to_file_system_changes(server_pid)
+
+    # File.touch!("magic_file_system_change_name")
+    PolyglotWatcher.ShellCommandRunner.run(["touch", "magic_file_system_change_name"])
+
+    :sys.get_state(server_pid)
+    |> IO.inspect()
+
+    :sys.get_state(languages_pid)
+    |> IO.inspect()
+
+    Application.put_env(:polyglot_watcher, :languages, Languages)
+    Application.put_env(:polyglot_watcher, :file_system_change, FileSystemChange)
+  end
+
+  @file_prefix "server_test_outout_"
+
+  test "puts non zero actions to be actioned next" do
+    # Application.put_env(:polyglot_watcher, :executor, BlockingTest)
+    # {:ok, _pid} = BlockingTest.start_link()
+    # BlockingTest.unblock()
+
+    # {:ok, server_pid} = Server.start_link([], [])
+
+    # wait_until_server_responds_to_file_system_changes(server_pid)
+
+    # BlockingTest.block()
+
+    # this_test_file = __ENV__.file()
+    # File.touch!(this_test_file)
+
+    # :sys.get_state(server_pid)
+    # |> IO.inspect()
+
+    # Application.put_env(:polyglot_watcher, :executor, Test)
+  end
 
   test "ignores file system changes whilst actions from the previous file system change are still running" do
-    Application.put_env(:polyglot_watcher, :executor, BlockingTest)
+    # Application.put_env(:polyglot_watcher, :executor, BlockingTest)
 
-    BlockingTest.start_link()
-    IO.inspect("1")
-    Server.start_link([], [])
-    IO.inspect("2")
+    # {:ok, _pid} = BlockingTest.start_link()
     # BlockingTest.unblock()
-    flunk("hello")
-    IO.inspect("3")
 
-    Application.put_env(:polyglot_watcher, :executor, Test)
+    # Enum.each(1..10, fn number ->
+    #  File.touch!("#{@file_prefix}#{number}")
+    # end)
+
+    # {:ok, server_pid} = Server.start_link([], [])
+
+    # wait_until_server_responds_to_file_system_changes(server_pid)
+    # |> IO.inspect()
+
+    # BlockingTest.block()
+
+    # IO.inspect(self(), label: "test PID (me)")
+    # PolyglotWatcher.ShellCommandRunner.run(["touch", "#{@file_prefix}1"])
+    # :os.cmd(:"echo 'dude' >> #{@file_prefix}1")
+    # inspect_pid_message_box(server_pid)
+    # PolyglotWatcher.ShellCommandRunner.run(["touch", "#{@file_prefix}2"])
+    # :os.cmd(:"echo 'dude' >> #{@file_prefix}2")
+    # inspect_pid_message_box(server_pid)
+    # PolyglotWatcher.ShellCommandRunner.run(["touch", "#{@file_prefix}3"])
+    # :os.cmd(:"echo 'dude' >> #{@file_prefix}3")
+    # inspect_pid_message_box(server_pid)
+    # PolyglotWatcher.ShellCommandRunner.run(["touch", "#{@file_prefix}4"])
+    # :os.cmd(:"echo 'dude' >> #{@file_prefix}4")
+    # PolyglotWatcher.ShellCommandRunner.run(["touch", "#{@file_prefix}5"])
+    # :os.cmd(:"echo 'dude' >> #{@file_prefix}5")
+    # PolyglotWatcher.ShellCommandRunner.run(["touch", "#{@file_prefix}6"])
+    # :os.cmd(:"echo 'dude' >> #{@file_prefix}6")
+    # PolyglotWatcher.ShellCommandRunner.run(["touch", "#{@file_prefix}7"])
+    # :os.cmd(:"echo 'dude' >> #{@file_prefix}7")
+    # PolyglotWatcher.ShellCommandRunner.run(["touch", "#{@file_prefix}8"])
+    # :os.cmd(:"echo 'dude' >> #{@file_prefix}8")
+    # PolyglotWatcher.ShellCommandRunner.run(["touch", "#{@file_prefix}9"])
+    # :os.cmd(:"echo 'dude' >> #{@file_prefix}9")
+    # PolyglotWatcher.ShellCommandRunner.run(["touch", "#{@file_prefix}10"])
+    # :os.cmd(:"echo 'dude' >> #{@file_prefix}10")
+
+    # BlockingTest.unblock()
+    # IO.inspect("UNBLOCK!")
+    # BlockingTest.block()
+
+    # PolyglotWatcher.ShellCommandRunner.run(["touch", auto_generated_test_file_path])
+
+    # :timer.sleep(4000)
+    # IO.inspect(:sys.get_state(history_pid), limit: :infinity)
+
+    # Process.exit(server_pid, :normal)
+    # Application.put_env(:polyglot_watcher, :executor, Test)
+  end
+
+  defp wait_until_server_responds_to_file_system_changes(server_pid) do
+    PolyglotWatcher.ShellCommandRunner.run(["touch", "server_wait_file"])
+    :os.cmd(:"echo 'dude' >> server_wait_file")
+
+    if get_pid_message_box(server_pid) == [] do
+      IO.inspect("server didn't respond :-(")
+      wait_until_server_responds_to_file_system_changes(server_pid)
+    else
+      IO.inspect("server now responds to file system changes!")
+    end
+  end
+
+  defp inspect_pid_message_box(pid) do
+    pid
+    |> get_pid_message_box()
+    |> IO.inspect()
+  end
+
+  defp get_pid_message_box(pid) do
+    [messages: messages] = :erlang.process_info(pid, [:messages])
+    messages
   end
 
   describe "handle_call/3 - user_input" do

@@ -14,7 +14,7 @@ defmodule PolyglotWatcher.MixProject do
   end
 
   defp elixirc_paths(:test) do
-    ["lib", "test/builders", "test/example_languages"]
+    ["lib", "test/mocks", "test/builders", "test/example_languages"]
   end
 
   defp elixirc_paths(_) do

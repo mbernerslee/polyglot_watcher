@@ -4,7 +4,10 @@ defmodule PolyglotWatcher.Executor.BlockingTest do
   @name :blocking_test_executor
 
   def start_link do
-    GenServer.start_link(__MODULE__, nil, name: @name)
+    case GenServer.start_link(__MODULE__, nil, name: @name) do
+      {:ok, pid} -> {:ok, pid}
+      {:error, {:already_started, pid}} -> {:ok, pid}
+    end
   end
 
   @impl true
@@ -17,12 +20,15 @@ defmodule PolyglotWatcher.Executor.BlockingTest do
     {:reply, :not_blocking, :not_blocking}
   end
 
+  def handle_call(:block, _from, state) do
+    {:reply, :blocking, :blocking}
+  end
+
   def handle_call(:is_blocking, _from, state) do
     {:reply, state, state}
   end
 
   def run_actions({actions, server_state}) do
-    IO.inspect(actions)
     start_link()
     maybe_block()
 
@@ -33,10 +39,17 @@ defmodule PolyglotWatcher.Executor.BlockingTest do
     GenServer.call(@name, :unblock)
   end
 
-  defp maybe_block do
+  def block do
+    GenServer.call(@name, :block)
+  end
+
+  defp maybe_block(first_call \\ true) do
     case GenServer.call(@name, :is_blocking) do
-      :blocking -> maybe_block()
-      :not_blocking -> :not_blocking
+      :blocking ->
+        maybe_block(false)
+
+      :not_blocking ->
+        :not_blocking
     end
   end
 end
