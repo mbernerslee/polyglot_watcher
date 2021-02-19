@@ -1,4 +1,4 @@
-defmodule PolyglotWatcher.Executor.BlockingTest do
+defmodule PolyglotWatcher.Mocks.BlockingExecutor do
   use GenServer
 
   @name :blocking_test_executor

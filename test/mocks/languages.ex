@@ -21,7 +21,10 @@ defmodule PolyglotWatcher.Mocks.Languages do
     {:reply, action, rest}
   end
 
-  def determine_actions({:noop, server_state}), do: {[], server_state}
+  def determine_actions({:noop, server_state}) do
+    IO.inspect("Called Mocks.Languages determine_actions with :noop")
+    {[], server_state}
+  end
 
   def determine_actions({_, _, server_state}) do
     IO.inspect("called determine_actions")

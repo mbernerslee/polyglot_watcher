@@ -1,7 +1,7 @@
 defmodule PolyglotWatcher.Server do
   use GenServer
   alias PolyglotWatcher.{Executor, Languages, UserInput, FileSystemChange}
-  alias PolyglotWatcher.Executor.{Test, BlockingTest}
+  alias PolyglotWatcher.Mocks.BlockingExecutor
 
   @process_name :server
 
@@ -22,22 +22,26 @@ defmodule PolyglotWatcher.Server do
 
   @impl true
   def init(command_line_args) do
-    if Application.get_env(:polyglot_watcher, :executor) == BlockingTest do
-      {:ok, watcher_pid} = FileSystem.start_link(dirs: ["."])
-      FileSystem.subscribe(watcher_pid)
-
-      server_state =
-        @initial_state
-        |> Map.put(:watcher_pid, watcher_pid)
-        |> Map.put(:starting_dir, File.cwd!())
-
-      {:ok, server_state}
+    if Application.get_env(:polyglot_watcher, :executor) == BlockingExecutor do
+      blocking_test_init()
     else
       standard_init(command_line_args)
     end
   end
 
-  def standard_init(command_line_args) do
+  defp blocking_test_init do
+    {:ok, watcher_pid} = FileSystem.start_link(dirs: ["."])
+    FileSystem.subscribe(watcher_pid)
+
+    server_state =
+      @initial_state
+      |> Map.put(:watcher_pid, watcher_pid)
+      |> Map.put(:starting_dir, File.cwd!())
+
+    {:ok, server_state}
+  end
+
+  defp standard_init(command_line_args) do
     case UserInput.startup(command_line_args, @initial_state) do
       {:ok, {actions, server_state}} ->
         {:ok, watcher_pid} = FileSystem.start_link(dirs: ["."])
@@ -61,6 +65,8 @@ defmodule PolyglotWatcher.Server do
 
   @impl true
   def handle_info({:file_event, _pid, {file_path, [:modified, :closed]}}, state) do
+    IO.inspect("hit handle_info with :file_event file path #{file_path}")
+
     if state.ignore_file_changes do
       {:noreply, state}
     else
@@ -121,6 +127,7 @@ defmodule PolyglotWatcher.Server do
   defp file_system_change_module do
     Application.get_env(:polyglot_watcher, :file_system_change, FileSystemChange)
   end
+
   defp languages_module do
     Application.get_env(:polyglot_watcher, :languages, Languages)
   end

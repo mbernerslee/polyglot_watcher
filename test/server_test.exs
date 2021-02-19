@@ -53,19 +53,24 @@ defmodule PolyglotWatcher.ServerTest do
   test "actions stack" do
     Application.put_env(:polyglot_watcher, :languages, Mocks.Languages)
     Application.put_env(:polyglot_watcher, :file_system_change, Mocks.FileSystemChange)
+    Application.put_env(:polyglot_watcher, :executor, Mocks.BlockingExecutor)
 
-    {:ok, languages_pid} =
-      Mocks.Languages.start_with_action_stack([1, 2, 3, 4, 5])
-      |> IO.inspect()
-
-    :sys.get_state(languages_pid)
-    |> IO.inspect()
+    {:ok, languages_pid} = Mocks.Languages.start_with_action_stack([1, 2, 3, 4, 5])
 
     {:ok, server_pid} = Server.start_link([], [])
     wait_until_server_responds_to_file_system_changes(server_pid)
 
+    {:ok, _pid} = Mocks.BlockingExecutor.start_link()
+    IO.inspect("start link for mock executor")
+
     # File.touch!("magic_file_system_change_name")
     PolyglotWatcher.ShellCommandRunner.run(["touch", "magic_file_system_change_name"])
+    PolyglotWatcher.ShellCommandRunner.run(["touch", "magic_file_system_change_name"])
+
+    Mocks.BlockingExecutor.unblock()
+
+    :sys.get_state(languages_pid)
+    |> IO.inspect()
 
     :sys.get_state(server_pid)
     |> IO.inspect()
@@ -75,6 +80,7 @@ defmodule PolyglotWatcher.ServerTest do
 
     Application.put_env(:polyglot_watcher, :languages, Languages)
     Application.put_env(:polyglot_watcher, :file_system_change, FileSystemChange)
+    Application.put_env(:polyglot_watcher, :executor, Test)
   end
 
   @file_prefix "server_test_outout_"
@@ -159,10 +165,8 @@ defmodule PolyglotWatcher.ServerTest do
     :os.cmd(:"echo 'dude' >> server_wait_file")
 
     if get_pid_message_box(server_pid) == [] do
-      IO.inspect("server didn't respond :-(")
+      :timer.sleep(10)
       wait_until_server_responds_to_file_system_changes(server_pid)
-    else
-      IO.inspect("server now responds to file system changes!")
     end
   end
 
