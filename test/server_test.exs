@@ -3,6 +3,8 @@ defmodule PolyglotWatcher.ServerTest do
   import ExUnit.CaptureIO
   alias PolyglotWatcher.{Server, ServerStateBuilder}
 
+  @test_file_path "server_wait_file"
+
   describe "start_link/2" do
     test "with no command line args given, spawns the server process with default starting state" do
       capture_io(fn ->
@@ -18,6 +20,39 @@ defmodule PolyglotWatcher.ServerTest do
     test "with invalid command line args given, exits" do
       assert {:error, :normal} == Server.start_link(["nonsense"], [])
     end
+
+    test "starts up into a loading state" do
+      assert {:ok, pid} = Server.start_link([], [])
+      assert %{warming_up: true} = :sys.get_state(pid)
+      # :os.cmd(:"echo 'dude' >> #{@test_file_path}")
+      :timer.sleep(1000)
+      touch_file_lots()
+      # touch_file_lots()
+      # :os.cmd(:"echo 'dude' >> server_wait_file")
+      IO.inspect(:sys.get_state(pid))
+      File.rm(@test_file_path)
+    end
+  end
+
+  defp touch_file_lots(touches_so_far \\ 1) do
+    unless touches_so_far > 20 do
+      :timer.sleep(10)
+      File.touch!(@test_file_path)
+    end
+  end
+
+  defp wait_until_server_responds_to_file_system_changes(server_pid) do
+    PolyglotWatcher.ShellCommandRunner.run(["touch", "server_wait_file"])
+    :os.cmd(:"echo 'dude' >> server_wait_file")
+
+    if get_pid_message_box(server_pid) == [] do
+      wait_until_server_responds_to_file_system_changes(server_pid)
+    end
+  end
+
+  defp get_pid_message_box(pid) do
+    [messages: messages] = :erlang.process_info(pid, [:messages])
+    messages
   end
 
   describe "child_spec/0" do

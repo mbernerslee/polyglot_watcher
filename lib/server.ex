@@ -6,7 +6,9 @@ defmodule PolyglotWatcher.Server do
 
   @default_options [name: @process_name]
 
-  @initial_state %{ignore_file_changes: false}
+  @initial_state %{ignore_file_changes: false, warming_up: true}
+
+  @temp_file ".polyglot_watcher_tmp_file"
 
   def child_spec(command_line_args \\ []) do
     %{
@@ -33,6 +35,7 @@ defmodule PolyglotWatcher.Server do
 
         server_state = Executor.run_actions({actions, server_state})
 
+        wait_for_fs_watch_to_respond_to_file_system()
         listen_for_user_input()
         {:ok, server_state}
 
@@ -43,7 +46,14 @@ defmodule PolyglotWatcher.Server do
   end
 
   @impl true
+  def hand_info({:file_event, _pid, {file_path, _}}, %{warming_up: true} = state) do
+    IO.inspect(file_path)
+    {:noreply, state}
+  end
+
   def handle_info({:file_event, _pid, {file_path, [:modified, :closed]}}, state) do
+    IO.inspect("I SAW A FILE EVENT!!! #{file_path}")
+
     if state.ignore_file_changes do
       {:noreply, state}
     else
@@ -65,7 +75,14 @@ defmodule PolyglotWatcher.Server do
     {:noreply, state}
   end
 
-  @impl true
+  def handle_call(:warmed_up_yet?, _from, %{warming_up: false} = state) do
+    {:reply, true, state}
+  end
+
+  def handle_call(:warmed_up_yet?, _from, %{warming_up: false} = state) do
+    {:reply, true, %{state | warming_up: }
+  end
+
   def handle_call({:user_input, user_input}, _from, state) do
     state =
       user_input
@@ -84,6 +101,12 @@ defmodule PolyglotWatcher.Server do
   defp set_ignore_file_changes(true_or_false) do
     pid = self()
     spawn_link(fn -> GenServer.cast(pid, {:ignore_file_changes, true_or_false}) end)
+  end
+
+  defp wait_for_fs_watch_to_respond_to_file_system do
+    File.touch!(@temp_file)
+    pid = self()
+    spawn_link(fn -> GenServer.call(pid, :warmed_up_yet?) end)
   end
 
   defp listen_for_user_input do
