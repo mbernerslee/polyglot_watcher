@@ -1,6 +1,6 @@
 defmodule PolyglotWatcher.Elixir.Language do
   alias PolyglotWatcher.LanguageBehaviour
-  alias PolyglotWatcher.Elixir.{Actions, FixAllMode}
+  alias PolyglotWatcher.Elixir.{Actions, FixAllMode, FixAllForFileMode}
   @behaviour LanguageBehaviour
 
   @ex ".ex"
@@ -31,6 +31,9 @@ defmodule PolyglotWatcher.Elixir.Language do
 
       {:fix_all, fix_all} ->
         FixAllMode.actions(server_state, fix_all)
+
+      {:fix_all_for_file, fix_all} ->
+        FixAllForFileMode.actions(server_state, fix_all, file)
 
       _ ->
         default_mode(file, server_state)
@@ -167,7 +170,7 @@ defmodule PolyglotWatcher.Elixir.Language do
     }
   end
 
-  defp test_path(file_path) do
+  def test_path(file_path) do
     [_head | rest] = Path.split(file_path)
     file_name = rest |> Enum.reverse() |> hd() |> Path.basename(@ex)
     middle = rest |> Enum.reverse() |> tl() |> Enum.reverse()

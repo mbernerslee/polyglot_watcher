@@ -134,4 +134,17 @@ defmodule PolyglotWatcher.Elixir.UserInputTest do
       assert %{elixir: %{mode: :default}} = new_server_state
     end
   end
+
+  describe "determine_actions/2 - fix_all_in_file mode" do
+    test "entering the mode" do
+      server_state = ServerStateBuilder.build()
+
+      assert {:ok, {actions, new_server_state}} =
+               UserInput.determine_actions("ex faff\n", server_state)
+
+      assert %{elixir: %{mode: {:fix_all_for_file, :whole_file}}} = new_server_state
+
+      assert %{run: _, next: %{fallback: _}} = actions
+    end
+  end
 end

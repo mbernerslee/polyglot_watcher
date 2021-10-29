@@ -31,7 +31,11 @@ defmodule PolyglotWatcher.Executor.Real do
   defp run_actions_tree({prev_action_result, server_state}, next) do
     actions = next[prev_action_result] || next[:fallback]
 
-    server_state = update_server_state(next, server_state)
+    IO.inspect("about to run update_server_state")
+
+    server_state =
+      update_server_state(next, server_state)
+      |> IO.inspect(label: "new updated server_state")
 
     {actions_result, server_state} =
       case actions do
@@ -40,9 +44,18 @@ defmodule PolyglotWatcher.Executor.Real do
 
         %{run: _} ->
           run_series_of_actions({actions[:run] || [], server_state})
+
+        :exit ->
+          {nil, server_state}
       end
 
-    run_actions_tree({actions_result, server_state}, actions[:next])
+    next_actions =
+      case actions do
+        :exit -> nil
+        more_actions -> more_actions[:next]
+      end
+
+    run_actions_tree({actions_result, server_state}, next_actions)
   end
 
   defp loop_through_actions(all_actions, action_key, server_state) do
@@ -69,7 +82,10 @@ defmodule PolyglotWatcher.Executor.Real do
   end
 
   defp update_server_state(%{update_server_state: updater}, server_state) do
+    IO.inspect("RUNNING UPDATER!!")
+
     updater.(server_state)
+    |> IO.inspect(label: "UPDATER RESULT")
   end
 
   defp update_server_state(_, server_state) do
@@ -84,9 +100,9 @@ defmodule PolyglotWatcher.Executor.Real do
     end)
   end
 
-  # defp run_action({:run_sys_cmd, "tput", _}, server_state) do
-  #  {0, server_state}
-  # end
+  defp run_action({:run_sys_cmd, "tput", _}, server_state) do
+    {0, server_state}
+  end
 
   defp run_action({:run_sys_cmd, cmd, args}, server_state) do
     {System.cmd(cmd, args, into: IO.stream(:stdio, :line)), server_state}

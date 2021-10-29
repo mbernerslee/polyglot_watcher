@@ -9,7 +9,7 @@ spinner()
 }
 
 get_time() {
-  echo $(python -c "import time; print(int(time.time()*1000))")
+  echo $(python3 -c "import time; print(int(time.time()*1000))")
 }
 
 show_result() {

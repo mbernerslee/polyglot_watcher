@@ -1,5 +1,5 @@
 defmodule PolyglotWatcher.Elixir.UserInput do
-  alias PolyglotWatcher.Elixir.{Actions, Language, FixAllMode, Usage}
+  alias PolyglotWatcher.Elixir.{Actions, Language, FixAllMode, FixAllForFileMode, Usage}
   alias PolyglotWatcher.UserInputBehaviour
   alias PolyglotWatcher.UserInput
 
@@ -55,7 +55,8 @@ defmodule PolyglotWatcher.Elixir.UserInput do
       "f" => &fixed_previous_mode/1,
       "d" => &default_mode/1,
       "a" => &mix_test/1,
-      "fa" => &FixAllMode.enter/1
+      "fa" => &FixAllMode.enter/1,
+      "faff" => &FixAllForFileMode.enter/1
     }
   end
 
