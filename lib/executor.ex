@@ -31,11 +31,7 @@ defmodule PolyglotWatcher.Executor.Real do
   defp run_actions_tree({prev_action_result, server_state}, next) do
     actions = next[prev_action_result] || next[:fallback]
 
-    IO.inspect("about to run update_server_state")
-
-    server_state =
-      update_server_state(next, server_state)
-      |> IO.inspect(label: "new updated server_state")
+    server_state = update_server_state(next, server_state)
 
     {actions_result, server_state} =
       case actions do
@@ -82,8 +78,6 @@ defmodule PolyglotWatcher.Executor.Real do
   end
 
   defp update_server_state(%{update_server_state: updater}, server_state) do
-    IO.inspect("RUNNING UPDATER!!")
-
     updater.(server_state)
     |> IO.inspect(label: "UPDATER RESULT")
   end

@@ -27,10 +27,7 @@ defmodule PolyglotWatcher.Elixir.FixAllForFileMode do
 
   def actions(server_state, x, file) do
     IO.inspect(server_state)
-
-    test_path =
-      Language.test_path(file.file_path)
-      |> IO.inspect()
+    test_path = Language.test_path(file.file_path)
 
     case server_state.elixir.mode do
       {:fix_all_for_file, :awaiting_file} ->
